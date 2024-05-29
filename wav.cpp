@@ -53,6 +53,22 @@ bool WriteWaveFile(const char *szFileName, void *pData, int32 nDataSize, int16 n
     waveHeader.m_nNumChannels= nNumChannels;
     waveHeader.m_nSampleRate= nSampleRate;
     waveHeader.m_nByteRate = nSampleRate * nNumChannels * nBitsPersample / 8;
-    waveHeader
 
+    //fill out sub chunk 2 "data"
+    memcpy(wave.m_szSubChunk1ID, "data", 4);
+    waveHeader.m_nSubChunkSize = nDataSize;
+
+    //write the header
+    fwrite(&waveHeader, sizeof(SMinimalWaveFileHeader),1,File );
+
+    //write the wave data itself
+    fwrite(pData, nDataSize, 1, File);
+
+    // close the file and return success
+    fclose(File);
+    return true;
 }
+
+int nSampleRate = 44100;
+int nNumSeconds = 4;
+int nNumChannels = 1;
