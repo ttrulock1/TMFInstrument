@@ -72,3 +72,14 @@ bool WriteWaveFile(const char *szFileName, void *pData, int32 nDataSize, int16 n
 int nSampleRate = 44100;
 int nNumSeconds = 4;
 int nNumChannels = 1;
+
+int nNumSamples = nSampleRate * nNumChannels * nNumSeconds;
+int32 *pData = new int32[nNumSamples];
+
+int32 nValue = 0;
+for(int nIndex = 0; nIndex < nNumSamples; ++nIndex){
+    nValue += 8000000;
+    pData[nIndex] = nValue;
+}
+
+WriteWaveFile("outmono.wav", pData, nNumberSamples * sizeof(pData[0]), nNumChannels, nSampleRate, sizeof(pData[0])*8);
