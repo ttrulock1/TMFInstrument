@@ -1,5 +1,9 @@
-//make a naive sine wave
-for(int nIndex = 0; nIndex <nNumSamples; ++nindex)
-{
-    pData[nIndex] = sin((float)nIndex * 2 * (float) M_PI * )
+#include <cmath>
+#include "sound.h"
+
+void GenerateSineWave(int16_t* pData, int nNumSamples, double frequency, double amp) {
+    for (int nIndex = 0; nIndex < nNumSamples; ++nIndex) {
+        double time = static_cast<double>(nIndex) / 44100.0;  // Convert index to time
+        pData[nIndex] = sound::SineWave(time, frequency, amp);
+    }
 }
