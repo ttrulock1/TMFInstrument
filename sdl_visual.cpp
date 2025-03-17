@@ -1,63 +1,61 @@
 #include <SDL2/SDL.h>
-#include <iostream>
 #include "shared_buffer.h"
 
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 400;
-
-int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
-        return -1;
+void HandleStepToggle(SDL_Event event, bool steps[16]) {
+    if (event.type == SDL_MOUSEBUTTONDOWN) {
+        int x = event.button.x;
+        int stepIndex = x / (800 / 16);  // Determine which step was clicked
+        steps[stepIndex] = !steps[stepIndex];  // Toggle step ON/OFF
     }
+}
 
-    SDL_Window* window = SDL_CreateWindow("Oscilloscope",
-                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                          WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!window) {
-        SDL_Log("Failed to create window: %s", SDL_GetError());
-        SDL_Quit();
-        return -1;
+void DrawStepSequencer(SDL_Renderer* renderer, bool steps[16]) {
+    int stepWidth = 800 / 16;
+    int stepHeight = 50;
+    int yPos = 350;  // Position near the bottom of the screen
+
+    for (int i = 0; i < 16; i++) {
+        SDL_Rect stepRect = { i * stepWidth, yPos, stepWidth - 5, stepHeight };
+        if (steps[i]) {
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // Active step (Green)
+        } else {
+            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);  // Inactive step (Gray)
+        }
+        SDL_RenderFillRect(renderer, &stepRect);
     }
+}
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer) {
-        SDL_Log("Failed to create renderer: %s", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
-    }
-
+void StartOscilloscope(SDL_Renderer* renderer) {
     bool quit = false;
+
     while (!quit) {
+        // Handle window events (close, ESC key)
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT ||
-               (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
+            if (event.type == SDL_QUIT || 
+                (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 quit = true;
             }
+
+            // ✅ Handle step toggling properly inside event loop
+            HandleStepToggle(event, stepSequence);
         }
 
+        // Clear screen 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // ✅ This version reads from `audioRingBuffer`, but the buffer had no data
+        // Draw waveform in green
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-        int centerY = WINDOW_HEIGHT / 2;
+        int w, h;
+        SDL_GetRendererOutputSize(renderer, &w, &h);
+        int centerY = h / 2;
         int x = 0;
         int prevY = centerY;
         int16_t sample;
 
-        std::cout << "Oscilloscope Debug: First 10 Samples = ";
-        int debugCount = 0;
-
-        while (audioRingBuffer.pop(sample) && x < WINDOW_WIDTH) {
-            // Print the first 10 samples for debugging
-            if (debugCount < 10) {
-                std::cout << sample << " ";
-                debugCount++;
-            }
-
+        // Pull samples from the audio ring buffer and draw the waveform
+        while (audioRingBuffer.pop(sample) && x < w) {
             int y = centerY - (sample * centerY / 32767);
             if (x > 0) {
                 SDL_RenderDrawLine(renderer, x - 1, prevY, x, y);
@@ -66,14 +64,9 @@ int main(int argc, char* argv[]) {
             ++x;
         }
 
-        std::cout << std::endl;
+        // ✅ Call Step Sequencer Drawing
+        DrawStepSequencer(renderer, stepSequence);
 
-        SDL_RenderPresent(renderer);
-        SDL_Delay(16);  // ~60 FPS throttle
+        SDL_RenderPresent(renderer);  // Present frame (vsync throttles to ~60 FPS)
     }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
 }
