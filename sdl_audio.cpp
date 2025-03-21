@@ -1,6 +1,9 @@
 #include <SDL2/SDL.h>
 #include "sound.h"
+using sound::WaveType;        // Brings WaveType into scope so we can use it directly
 #include "shared_buffer.h"
+#include <atomic>
+
 
 // Forward declare visualization function
 void StartOscilloscope(SDL_Renderer* renderer);
@@ -9,6 +12,9 @@ void StartOscilloscope(SDL_Renderer* renderer);
 const int BUFFER_SIZE = 8192;
 static uint64_t totalSamples = 0;  // Continuous sample counter
 
+// 🔹 Global BPM variable (linked from sdl_visual)
+extern std::atomic<int> BPM;
+
 void AudioCallback(void* userdata, Uint8* stream, int len) {
     int16_t* buffer = reinterpret_cast<int16_t*>(stream);
     int samples = len / sizeof(int16_t);
@@ -16,13 +22,16 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
     // Step Sequencer Variables
     static int stepIndex = 0;
     static int stepCounter = 0;
-    const int stepLength = SAMPLE_RATE / 4; // 4 steps per second (adjustable)
+
+    // 🔹 Dynamic step length based on BPM
+    int bpm = BPM.load(); 
+    int stepLength = (int)((SAMPLE_RATE * 60.0) / (bpm * 4)); // BPM-adjusted step timing
 
     // Synthesis parameters
     double frequency = 440.0;  // Default frequency (A4)
     double amp = 0.5;
     sound::ADSR env = { 0.01, 0.1, 0.8, 0.1 };
-    sound::WaveType waveType = sound::SINE;
+    WaveType waveType = currentWaveform.load(); // this is the live selected waveform
     double duration = 1.0;
 
     for (int i = 0; i < samples; ++i) {
@@ -44,7 +53,6 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
         audioRingBuffer.push(buffer[i]);
     }
 }
-
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
@@ -88,8 +96,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Start audio playback and visualization loop
-    SDL_PauseAudio(0);                 // begin audio callback processing
-    StartOscilloscope(renderer);       // run oscilloscope until user quits
+    SDL_PauseAudio(0);                 // Begin audio callback processing
+    StartOscilloscope(renderer);       // Run oscilloscope until user quits
 
     // Cleanup resources after loop exits
     SDL_CloseAudio();
