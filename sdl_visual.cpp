@@ -5,8 +5,9 @@
 #include <atomic>
 #include <string>
 
-using sound::WaveType; // I ADDED THIS LINE to bring WaveType into scope
-extern std::atomic<WaveType> currentWaveform;  // 👈 Declares shared waveform state
+using sound::WaveType;
+extern std::atomic<WaveType> currentWaveform;
+extern std::atomic<int> stepPitches[16];
 
 // Window dimensions
 const int WINDOW_WIDTH = 800;
@@ -27,8 +28,12 @@ const int WAVE_BTN_HEIGHT = 30;
 const int WAVE_BTN_X = 10;
 const int WAVE_BTN_Y = 10;
 
-// Global BPM variable
-std::atomic<int> BPM = 120; // Default BPM at 120
+// Pitch Slider Config
+const int PITCH_SLIDER_WIDTH = 20;
+const int PITCH_SLIDER_HEIGHT = 100;
+const int PITCH_SLIDER_Y = 220;
+bool adjustingPitch[16] = {false};
+
 
 void DrawStepSequencer(SDL_Renderer* renderer, bool stepSequence[]);
 void HandleStepToggle(SDL_Event& event, bool stepSequence[]);
@@ -36,7 +41,6 @@ void HandleStepToggle(SDL_Event& event, bool stepSequence[]);
 void StartOscilloscope(SDL_Renderer* renderer) {
     bool quit = false;
 
-    // 🔹 Initialize SDL_ttf for text rendering
     if (TTF_Init() == -1) {
         SDL_Log("Failed to initialize SDL_ttf: %s", TTF_GetError());
         return;
@@ -59,7 +63,6 @@ void StartOscilloscope(SDL_Renderer* renderer) {
             int mouseX = event.button.x;
             int mouseY = event.button.y;
 
-            // 🔹 BPM Slider Interaction
             if (event.type == SDL_MOUSEBUTTONDOWN &&
                 mouseX >= SLIDER_X && mouseX <= SLIDER_X + SLIDER_WIDTH &&
                 mouseY >= SLIDER_Y && mouseY <= SLIDER_Y + SLIDER_HEIGHT) {
@@ -73,7 +76,6 @@ void StartOscilloscope(SDL_Renderer* renderer) {
                 BPM.store(std::max(BPM_MIN, std::min(newBPM, BPM_MAX)));
             }
 
-            // 🔹 Waveform Toggle Click
             if (event.type == SDL_MOUSEBUTTONDOWN) {
                 for (int i = 0; i < 3; ++i) {
                     int btnX = WAVE_BTN_X;
@@ -85,14 +87,28 @@ void StartOscilloscope(SDL_Renderer* renderer) {
                 }
             }
 
+            for (int i = 0; i < 16; ++i) {
+                int sliderX = i * 50 + 15;
+                if (event.type == SDL_MOUSEBUTTONDOWN &&
+                    mouseX >= sliderX && mouseX <= sliderX + PITCH_SLIDER_WIDTH &&
+                    mouseY >= PITCH_SLIDER_Y && mouseY <= PITCH_SLIDER_Y + PITCH_SLIDER_HEIGHT) {
+                    adjustingPitch[i] = true;
+                }
+                if (event.type == SDL_MOUSEBUTTONUP) {
+                    adjustingPitch[i] = false;
+                }
+                if (event.type == SDL_MOUSEMOTION && adjustingPitch[i]) {
+                    int newVal = 12 - ((mouseY - PITCH_SLIDER_Y) * 25 / PITCH_SLIDER_HEIGHT);
+                    stepPitches[i].store(std::max(-12, std::min(newVal, 12)));
+                }
+            }
+
             HandleStepToggle(event, stepSequence);
         }
 
-        // 🖥 Clear screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Draw waveform
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
         int w, h;
         SDL_GetRendererOutputSize(renderer, &w, &h);
@@ -107,10 +123,8 @@ void StartOscilloscope(SDL_Renderer* renderer) {
             ++x;
         }
 
-        // Step Sequencer
         DrawStepSequencer(renderer, stepSequence);
 
-        // Draw BPM Slider
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_Rect sliderBar = {SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT};
         SDL_RenderFillRect(renderer, &sliderBar);
@@ -120,7 +134,6 @@ void StartOscilloscope(SDL_Renderer* renderer) {
         SDL_Rect knob = {knobX - 5, SLIDER_Y, 10, SLIDER_HEIGHT};
         SDL_RenderFillRect(renderer, &knob);
 
-        // BPM Label
         SDL_Color textColor = {255, 255, 255, 255};
         std::string bpmText = "BPM: " + std::to_string(BPM.load());
         SDL_Surface* textSurface = TTF_RenderText_Solid(font, bpmText.c_str(), textColor);
@@ -130,15 +143,26 @@ void StartOscilloscope(SDL_Renderer* renderer) {
         SDL_FreeSurface(textSurface);
         SDL_DestroyTexture(textTexture);
 
-        // Draw waveform toggle buttons
         for (int i = 0; i < 3; ++i) {
             SDL_Rect btn = {WAVE_BTN_X, WAVE_BTN_Y + i * (WAVE_BTN_HEIGHT + 10), WAVE_BTN_WIDTH, WAVE_BTN_HEIGHT};
             if (currentWaveform.load() == static_cast<WaveType>(i)) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Active = Red
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             } else {
-                SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Inactive = Gray
+                SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
             }
             SDL_RenderFillRect(renderer, &btn);
+        }
+
+        for (int i = 0; i < 16; ++i) {
+            int sliderX = i * 50 + 15;
+            int semitone = stepPitches[i].load();
+            int sliderKnobY = PITCH_SLIDER_Y + ((12 - semitone) * PITCH_SLIDER_HEIGHT / 25);
+            SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+            SDL_Rect sliderBg = {sliderX, PITCH_SLIDER_Y, PITCH_SLIDER_WIDTH, PITCH_SLIDER_HEIGHT};
+            SDL_RenderFillRect(renderer, &sliderBg);
+            SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
+            SDL_Rect knob = {sliderX, sliderKnobY - 5, PITCH_SLIDER_WIDTH, 10};
+            SDL_RenderFillRect(renderer, &knob);
         }
 
         SDL_RenderPresent(renderer);

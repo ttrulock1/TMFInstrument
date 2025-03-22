@@ -1,55 +1,63 @@
 #include <SDL2/SDL.h>
 #include "sound.h"
-using sound::WaveType;        // Brings WaveType into scope so we can use it directly
+using sound::WaveType;
 #include "shared_buffer.h"
 #include <atomic>
+#include <cmath>  // for std::pow function
 
 
 // Forward declare visualization function
 void StartOscilloscope(SDL_Renderer* renderer);
 
-// Buffer size for SDL audio callback.
+// Buffer size for SDL audio callback
 const int BUFFER_SIZE = 8192;
 static uint64_t totalSamples = 0;  // Continuous sample counter
 
-// 🔹 Global BPM variable (linked from sdl_visual)
-extern std::atomic<int> BPM;
-
+// Audio callback function for SDL
 void AudioCallback(void* userdata, Uint8* stream, int len) {
     int16_t* buffer = reinterpret_cast<int16_t*>(stream);
     int samples = len / sizeof(int16_t);
 
-    // Step Sequencer Variables
+    // Step sequencer state
     static int stepIndex = 0;
     static int stepCounter = 0;
 
-    // 🔹 Dynamic step length based on BPM
-    int bpm = BPM.load(); 
-    int stepLength = (int)((SAMPLE_RATE * 60.0) / (bpm * 4)); // BPM-adjusted step timing
+    // Calculate step length based on current BPM (dynamic step timing)
+    int bpm = BPM.load();
+    int stepLength = static_cast<int>((SAMPLE_RATE * 60.0) / (bpm * 4));  // samples per step
 
     // Synthesis parameters
-    double frequency = 440.0;  // Default frequency (A4)
-    double amp = 0.5;
-    sound::ADSR env = { 0.01, 0.1, 0.8, 0.1 };
-    WaveType waveType = currentWaveform.load(); // this is the live selected waveform
-    double duration = 1.0;
+    double baseFrequency = 440.0;      // Base frequency (A4 = 440 Hz)
+    double amp = 0.5;                  // Amplitude
+    sound::ADSR env = {0.01, 0.1, 0.8, 0.1};  // Envelope (attack, decay, sustain, release)
+    WaveType waveType = currentWaveform.load();  // Current waveform selection
+    double duration = 1.0;             // Note duration for envelope (not heavily used here)
 
+    // Generate audio samples
     for (int i = 0; i < samples; ++i) {
-        // Step Sequencer Logic
+        // Advance step timing
         if (stepCounter++ >= stepLength) {
             stepCounter = 0;
-            stepIndex = (stepIndex + 1) % 16;  // Move to next step
+            stepIndex = (stepIndex + 1) % 16;  // move to the next step (wrap around 16 steps)
         }
 
-        // Only play sound if the step is active
+        // If the current step is active, generate a tone with the step's pitch offset
         if (stepSequence[stepIndex]) {
+            // Compute frequency for this step by applying the pitch offset (semitones) to the base frequency
+            int pitchOffset = stepPitches[stepIndex].load();
+            double stepFrequency = baseFrequency * std::pow(2.0, pitchOffset / 12.0);  
+            // ^ Formula: freq = baseFreq * 2^(pitchOffset/12)
+
+            // Generate the waveform sample at the calculated frequency
             double time = static_cast<double>(totalSamples++) / SAMPLE_RATE;
-            buffer[i] = sound::GenerateWave(waveType, time, duration, frequency, amp, env);
+            buffer[i] = sound::GenerateWave(waveType, time, duration, stepFrequency, amp, env);
         } else {
-            buffer[i] = 0;  // Silence if step is OFF
+            // Step is off; output silence
+            buffer[i] = 0;
+            totalSamples++;  // still advance the global sample counter to keep time continuity
         }
 
-        // Push audio data into ring buffer for visualization
+        // Push sample to the ring buffer for visualization (oscilloscope)
         audioRingBuffer.push(buffer[i]);
     }
 }
@@ -60,7 +68,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Setup audio specification
+    // Setup audio spec for desired output
     SDL_AudioSpec spec;
     spec.freq = SAMPLE_RATE;
     spec.format = AUDIO_S16SYS;
@@ -75,7 +83,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Create window for oscilloscope display
+    // Create a window for oscilloscope display (visualization)
     SDL_Window* window = SDL_CreateWindow("Oscilloscope",
                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                          800, 400, SDL_WINDOW_SHOWN);
@@ -85,8 +93,8 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return -1;
     }
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 
-                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1,
+                                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         SDL_Log("Failed to create renderer: %s", SDL_GetError());
         SDL_DestroyWindow(window);
@@ -96,10 +104,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Start audio playback and visualization loop
-    SDL_PauseAudio(0);                 // Begin audio callback processing
-    StartOscilloscope(renderer);       // Run oscilloscope until user quits
+    SDL_PauseAudio(0);            // Begin audio callback processing (unpause audio)
+    StartOscilloscope(renderer);  // Enter visualization loop until quit
 
-    // Cleanup resources after loop exits
+    // Cleanup on exit
     SDL_CloseAudio();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
