@@ -11,6 +11,8 @@ extern std::atomic<WaveType> currentWaveform;
 extern std::atomic<int> stepPitches[16];
 extern std::atomic<int> BPM;
 extern bool stepSequence[16];
+extern void HandlePadEvents(SDL_Event& event);
+extern void DrawPads(SDL_Renderer* renderer);
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 400;
@@ -44,7 +46,9 @@ SDL_Point adsrPoints[4] = {
     {50, 300}, {150, 350}, {250, 330}, {350, 380}
 };
 bool draggingASDR[4] = {false};
-bool showASDRMode = true;
+bool showASDRMode = false;
+bool showPadMode = false; // Add this global toggle for pad screen mode
+
 SDL_Rect toggleBtn = {WINDOW_WIDTH - 60, 10, 50, 30}; // 🔘 Top right corner
 
 // Draw ASDR Graph
@@ -58,6 +62,12 @@ void DrawADSREditor(SDL_Renderer* renderer) {
         SDL_Rect knob = {adsrPoints[i].x - 5, adsrPoints[i].y - 5, 10, 10};
         SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
         SDL_RenderFillRect(renderer, &knob);
+    }
+}
+
+void HandleGlobalKeyEvents(SDL_Event& event) {
+    if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_TAB) {
+        showPadMode = !showPadMode;  // Toggle pad screen mode
     }
 }
 
@@ -158,11 +168,21 @@ void StartOscilloscope(SDL_Renderer* renderer) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE))
                 quit = true;
+
+            HandleGlobalKeyEvents(event);
+
+                if (showPadMode) {
+        HandlePadEvents(event);   // <-- ADD THIS LINE
+        continue;                 // <-- ADD THIS LINE to skip other events in pad mode
+    }
+
             
             if (showASDRMode) {
                 HandleADSREvents(event);
                 continue;
             }
+
+
 
 HandleToggleButtonEvent(event);
 
@@ -216,6 +236,12 @@ HandleToggleButtonEvent(event);
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+        
+        if (showPadMode) {
+    DrawPads(renderer);            // Draws the pad screen UI
+    SDL_RenderPresent(renderer);   // Updates the screen to show pads immediately
+    continue;                      // Skip the rest to avoid drawing other screens over pads
+}
 
         if (showASDRMode) {
             DrawADSREditor(renderer);
@@ -275,7 +301,7 @@ HandleToggleButtonEvent(event);
             SDL_Rect knob = {sliderX, sliderKnobY - 5, PITCH_SLIDER_WIDTH, 10};
             SDL_RenderFillRect(renderer, &knob);
         }
-        // 🔘 Always show ASDR toggle button (top-right corner)
+        // Always show ASDR toggle button (top-right corner)
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &toggleBtn);
 

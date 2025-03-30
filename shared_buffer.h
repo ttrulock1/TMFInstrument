@@ -12,9 +12,20 @@ extern bool stepSequence[16];  // Step on/off states for the 16 steps
 // Current waveform type (atomic for thread-safety between UI and audio threads)
 extern std::atomic<sound::WaveType> currentWaveform;
 
+
 // Pitch offset for each step (in semitones, range -12 to +12; 0 = base pitch)
 extern std::atomic<int> stepPitches[16];
 
 extern std::atomic<int> BPM;  // Beats per minute (atomic for thread-safety)
+
+struct NoteEvent {
+    double frequency;
+    double duration;
+    sound::ADSR env;
+};
+
+extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
+
+
 
 #endif // SHARED_BUFFER_H
