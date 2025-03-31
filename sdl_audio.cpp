@@ -34,6 +34,8 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
     double duration = 1.0;             // Note duration for envelope (not heavily used here)
 
     // Generate audio samples
+
+    
     for (int i = 0; i < samples; ++i) {
         // Advance step timing
         if (stepCounter++ >= stepLength) {

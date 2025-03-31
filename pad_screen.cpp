@@ -12,26 +12,38 @@ const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 400;
 
 void playPadNote(int padIndex) {
-    std::thread([padIndex]() {
-        const double baseFreq = 261.63; // Middle C
-        double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
-        double duration = 0.3;
-        double amp = 0.5;
-        sound::ADSR env = {0.01, 0.05, 0.8, 0.05};
+    const double baseFreq = 261.63; // Middle C
+    double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
+    double duration = 0.3;
+    sound::ADSR env = {0.01, 0.05, 0.8, 0.05};
 
-        int samples = SAMPLE_RATE * duration;
-
-        for (int i = 0; i < samples; ++i) {
-            double time = static_cast<double>(i) / SAMPLE_RATE;
-            int16_t sample = sound::GenerateWave(
-                currentWaveform.load(), time, duration, freq, amp, env
-            );
-
-            audioRingBuffer.push(sample);
-            SDL_Delay(1000 / SAMPLE_RATE);
-        }
-    }).detach();
+    NoteEvent note = {freq, duration, env};
+    padNoteEvents.push(note); // Correct ✅
 }
+
+
+
+// void playPadNote(int padIndex) {
+//     std::thread([padIndex]() {
+//         const double baseFreq = 261.63; // Middle C
+//         double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
+//         double duration = 0.3;
+//         double amp = 0.5;
+//         sound::ADSR env = {0.01, 0.05, 0.8, 0.05};
+
+//         int samples = SAMPLE_RATE * duration;
+
+//         for (int i = 0; i < samples; ++i) {
+//             double time = static_cast<double>(i) / SAMPLE_RATE;
+//             int16_t sample = sound::GenerateWave(
+//                 currentWaveform.load(), time, duration, freq, amp, env
+//             );
+
+//             audioRingBuffer.push(sample);
+//             SDL_Delay(1000 / SAMPLE_RATE);
+//         }
+//     }).detach();
+// }
 
 void DrawPads(SDL_Renderer* renderer) {
     const int padSize = 80;
