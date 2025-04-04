@@ -14,4 +14,10 @@ std::atomic<sound::WaveType> currentWaveform = sound::WaveType::SINE;
 // Define BPM (can be modified elsewhere)
 std::atomic<int> BPM = 120;  // default BPM, for example
 
+std::atomic<float> attackTime = 0.01f;
+std::atomic<float> decayTime = 0.1f;
+std::atomic<float> sustainLevel = 0.8f;
+std::atomic<float> releaseTime = 0.1f;
+
+
 RingBuffer<NoteEvent> padNoteEvents(128); // small queue for instant pad notes
