@@ -5,6 +5,7 @@
 #include <atomic>
 #include <string>
 #include <cmath>
+#include "effects.h"
 
 using sound::WaveType;
 extern std::atomic<WaveType> currentWaveform;
@@ -13,6 +14,9 @@ extern std::atomic<int> BPM;
 extern bool stepSequence[16];
 extern void HandlePadEvents(SDL_Event& event);
 extern void DrawPads(SDL_Renderer* renderer);
+bool showEffectsMode = false;
+
+
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 400;
@@ -50,6 +54,10 @@ bool showASDRMode = false;
 bool showPadMode = false; // Add this global toggle for pad screen mode
 
 SDL_Rect toggleBtn = {WINDOW_WIDTH - 60, 10, 50, 30}; // 🔘 Top right corner
+
+SDL_Rect effectsBtn = {WINDOW_WIDTH - 60, 50, 50, 30}; // 🎛 Button below ASDR
+
+
 
 // Draw ASDR Graph
 void DrawADSREditor(SDL_Renderer* renderer) {
@@ -89,6 +97,10 @@ void HandleADSREvents(SDL_Event& event) {
         if (SDL_PointInRect(&pt, &toggleBtn)) {
             showASDRMode = !showASDRMode;
         }
+        // 👽 Effects toggle button logic
+        if (SDL_PointInRect(&pt, &effectsBtn)) {
+            showEffectsMode = !showEffectsMode;
+        }
     }
 
     if (event.type == SDL_MOUSEBUTTONUP) {
@@ -124,7 +136,10 @@ if (event.type == SDL_MOUSEMOTION) {
     }
 }
 
+
 }
+
+
 
 void DrawStepSequencer(SDL_Renderer* renderer, bool stepSequence[]) {
     for (int i = 0; i < 16; ++i) {
@@ -170,6 +185,10 @@ void StartOscilloscope(SDL_Renderer* renderer) {
                 quit = true;
 
             HandleGlobalKeyEvents(event);
+                // 👽 Toggle Effects UI with Return/Enter key
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
+            showEffectsMode = !showEffectsMode;
+        }
 
                 if (showPadMode) {
         HandlePadEvents(event);   // <-- ADD THIS LINE
@@ -177,10 +196,18 @@ void StartOscilloscope(SDL_Renderer* renderer) {
     }
 
             
-            if (showASDRMode) {
-                HandleADSREvents(event);
-                continue;
-            }
+    if (showASDRMode) {
+        HandleADSREvents(event);
+        continue;
+    }
+
+    // 😉 Fixed block 1: when FX mode is active, handle its events but don't do extra drawing here
+    if (showEffectsMode) {
+        HandleEffectUIEvents(event);
+        continue;
+    }
+
+
 
 
 
@@ -232,6 +259,15 @@ HandleToggleButtonEvent(event);
             }
 
             HandleStepToggle(event, stepSequence);
+        }
+
+            // 😉 Fixed block 2: Gate the main drawing if FX mode is active
+        if (showEffectsMode) {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+            DrawEffectsUI(renderer, font);
+            SDL_RenderPresent(renderer);
+            continue;  // Skip drawing the normal UI
         }
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -305,8 +341,20 @@ HandleToggleButtonEvent(event);
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &toggleBtn);
 
-        SDL_RenderPresent(renderer);
-    }
+        // 👽 Draw Effects Button BEFORE presenting the frame
+SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
+SDL_RenderFillRect(renderer, &effectsBtn);
+
+SDL_Surface* fxSurface = TTF_RenderText_Solid(font, "FX", color);
+SDL_Texture* fxTexture = SDL_CreateTextureFromSurface(renderer, fxSurface);
+SDL_Rect fxRect = {effectsBtn.x + 10, effectsBtn.y + 5, fxSurface->w, fxSurface->h};
+SDL_RenderCopy(renderer, fxTexture, nullptr, &fxRect);
+SDL_FreeSurface(fxSurface);
+SDL_DestroyTexture(fxTexture);
+
+// Present the final frame
+SDL_RenderPresent(renderer);    
+}
 
     TTF_CloseFont(font);
     TTF_Quit();

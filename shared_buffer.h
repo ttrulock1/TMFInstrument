@@ -26,6 +26,19 @@ struct NoteEvent {
 
 extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
 
+// 👽 Delay parameters (used in effects.cpp, sdl_audio.cpp)
+extern std::atomic<float> delayTime;
+extern std::atomic<float> delayFeedback;
+extern std::atomic<float> delayMix;
+extern std::atomic<float> delayHighCut;
+extern std::atomic<bool> delayEnabled;
+
+// shared_buffer.h
+// 👽 Reverb parameters 
+extern std::atomic<float> reverbDecay;
+extern std::atomic<float> reverbDamping;
+extern std::atomic<float> reverbMix;
+extern std::atomic<bool> reverbEnabled;
 
 
 #endif // SHARED_BUFFER_H

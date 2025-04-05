@@ -19,5 +19,12 @@ std::atomic<float> decayTime = 0.1f;
 std::atomic<float> sustainLevel = 0.8f;
 std::atomic<float> releaseTime = 0.1f;
 
+// 👽 Delay effect parameter definitions
+std::atomic<float> delayTime = 0.25f;         // 0.0 - 1.0
+std::atomic<float> delayFeedback = 0.4f;      // 0.0 - 1.0
+std::atomic<float> delayMix = 0.3f;           // 0.0 - 1.0
+std::atomic<float> delayHighCut = 1.0f;       // normalized 0.0 to 1.0 (placeholder)
+std::atomic<bool> delayEnabled = true;
+
 
 RingBuffer<NoteEvent> padNoteEvents(128); // small queue for instant pad notes
