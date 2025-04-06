@@ -3,6 +3,8 @@
 using sound::WaveType;
 #include "shared_buffer.h"
 #include "delay.h"  // 🎯 Include our delay effect
+#include "reverb.h"
+#include "chorus.h"  // uncomment when created
 #include <atomic>
 #include <cmath>  // for std::pow
 #include <algorithm> // for std::clamp
@@ -55,6 +57,9 @@ static Voice seqVoice;
 
 // 🎯 Global delay effect — 44100 = 1 second buffer, 500ms default delay
 static Delay delayEffect(SAMPLE_RATE, 1000);
+static Reverb reverb(44100.0); // ✅ Now matches constructor
+static Chorus chorus(44100.0);  // 👈 you might already have this
+
 
 // Audio callback function for SDL
 void AudioCallback(void* userdata, Uint8* stream, int len) {
@@ -122,13 +127,44 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
         int sample = seqSample + padSample;
         float drySample = sample / 32768.0f;
 
-        // 🍀 Conditionally apply delay
-        float wetSample = delayEnabled.load()
-            ? delayEffect.process(drySample)
-            : drySample;
+        // // 🍀 Conditionally apply delay
+        // float wetSample = delayEnabled.load()
+        //     ? delayEffect.process(drySample)
+        //     : drySample;
 
-        float mixed = drySample + wetSample * 0.5f;
-        int finalSample = static_cast<int>(mixed * 32768.0f);
+        // float mixed = drySample + wetSample * 0.5f;
+        // int finalSample = static_cast<int>(mixed * 32768.0f);
+
+        // 🔁 Apply effects in chain: Chorus → Delay → Reverb
+
+// 🎛️ Apply Chorus (if implemented)
+if (chorusEnabled.load()) {
+    chorus.setRate(chorusRate.load());
+    chorus.setDepth(chorusDepth.load());
+    chorus.setMix(chorusMix.load());
+    drySample = chorus.process(drySample);
+}
+
+// ⏱️ Apply Delay
+if (delayEnabled.load()) {
+    delayEffect.setDelayTime(static_cast<int>(delayTime.load()));
+    delayEffect.setFeedback(delayFeedback.load());
+    delayEffect.setMix(delayMix.load());
+    // delayEffect.setHighCut(delayHighCut.load()); // if supported
+    drySample = delayEffect.process(drySample);
+}
+
+// 🌫️ Apply Reverb
+if (reverbEnabled.load()) {
+    reverb.setDecay(reverbDecay.load());
+    reverb.setDamping(reverbDamping.load());
+    reverb.setMix(reverbMix.load());
+    drySample = reverb.process(drySample);
+}
+
+// ✅ Final sample conversion
+int finalSample = static_cast<int>(drySample * 32768.0f);
+
 
         // Clip and write
         sample = std::clamp(sample, -32768, 32767);
