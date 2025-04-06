@@ -26,6 +26,12 @@ struct NoteEvent {
 
 extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
 
+// 🌊 Chorus parameters
+extern std::atomic<float> chorusRate;
+extern std::atomic<float> chorusDepth;
+extern std::atomic<float> chorusMix;
+extern std::atomic<bool> chorusEnabled;
+
 // 👽 Delay parameters (used in effects.cpp, sdl_audio.cpp)
 extern std::atomic<float> delayTime;
 extern std::atomic<float> delayFeedback;
