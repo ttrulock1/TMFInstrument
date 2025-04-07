@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "shared_buffer.h"
+#include "adsr_ui.h"
 #include "sound.h"
 #include <atomic>
 #include <string>
@@ -22,7 +23,7 @@ const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 400;
 
 // 🔒 ASDR editing area bounds (left 50% of screen, 30px padding)
-const SDL_Rect adsrBounds = {30, 100, WINDOW_WIDTH / 2 - 60, 150};
+// const SDL_Rect adsrBounds = {30, 100, WINDOW_WIDTH / 2 - 60, 150};
 
 // BPM slider
 const int BPM_MIN = 40;
@@ -45,12 +46,12 @@ const int PITCH_SLIDER_HEIGHT = 100;
 const int PITCH_SLIDER_Y = 220;
 bool adjustingPitch[16] = {false};
 
-// 🆕 ASDR Editor Toggle + Control
-SDL_Point adsrPoints[4] = {
-    {50, 300}, {150, 350}, {250, 330}, {350, 380}
-};
-bool draggingASDR[4] = {false};
-bool showASDRMode = false;
+// // 🆕 ASDR Editor Toggle + Control
+// SDL_Point adsrPoints[4] = {
+//     {50, 300}, {150, 350}, {250, 330}, {350, 380}
+// };
+// bool draggingASDR[4] = {false};
+// bool showASDRMode = false;
 bool showPadMode = false; // Add this global toggle for pad screen mode
 
 SDL_Rect toggleBtn = {WINDOW_WIDTH - 60, 10, 50, 30}; // 🔘 Top right corner
@@ -60,18 +61,18 @@ SDL_Rect effectsBtn = {WINDOW_WIDTH - 60, 50, 50, 30}; // 🎛 Button below ASDR
 
 
 // Draw ASDR Graph
-void DrawADSREditor(SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawLine(renderer, adsrPoints[0].x, adsrPoints[0].y, adsrPoints[1].x, adsrPoints[1].y);
-    SDL_RenderDrawLine(renderer, adsrPoints[1].x, adsrPoints[1].y, adsrPoints[2].x, adsrPoints[2].y);
-    SDL_RenderDrawLine(renderer, adsrPoints[2].x, adsrPoints[2].y, adsrPoints[3].x, adsrPoints[3].y);
+// void DrawADSREditor(SDL_Renderer* renderer) {
+//     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+//     SDL_RenderDrawLine(renderer, adsrPoints[0].x, adsrPoints[0].y, adsrPoints[1].x, adsrPoints[1].y);
+//     SDL_RenderDrawLine(renderer, adsrPoints[1].x, adsrPoints[1].y, adsrPoints[2].x, adsrPoints[2].y);
+//     SDL_RenderDrawLine(renderer, adsrPoints[2].x, adsrPoints[2].y, adsrPoints[3].x, adsrPoints[3].y);
 
-    for (int i = 0; i < 4; ++i) {
-        SDL_Rect knob = {adsrPoints[i].x - 5, adsrPoints[i].y - 5, 10, 10};
-        SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
-        SDL_RenderFillRect(renderer, &knob);
-    }
-}
+//     for (int i = 0; i < 4; ++i) {
+//         SDL_Rect knob = {adsrPoints[i].x - 5, adsrPoints[i].y - 5, 10, 10};
+//         SDL_SetRenderDrawColor(renderer, 255, 165, 0, 255);
+//         SDL_RenderFillRect(renderer, &knob);
+//     }
+// }
 
 void HandleGlobalKeyEvents(SDL_Event& event) {
     if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_TAB) {
@@ -79,65 +80,65 @@ void HandleGlobalKeyEvents(SDL_Event& event) {
     }
 }
 
-// Handle ASDR Drag Events
-void HandleADSREvents(SDL_Event& event) {
-    int mouseX = event.button.x;
-    int mouseY = event.button.y;
+// // Handle ASDR Drag Events
+// void HandleADSREvents(SDL_Event& event) {
+//     int mouseX = event.button.x;
+//     int mouseY = event.button.y;
 
-    if (event.type == SDL_MOUSEBUTTONDOWN) {
-        for (int i = 0; i < 4; ++i) {
-            SDL_Rect knob = {adsrPoints[i].x - 5, adsrPoints[i].y - 5, 10, 10};
-            SDL_Point pt = {mouseX, mouseY};
-            if (SDL_PointInRect(&pt, &knob)) {
-                draggingASDR[i] = true;
-            }
-        }
+//     if (event.type == SDL_MOUSEBUTTONDOWN) {
+//         for (int i = 0; i < 4; ++i) {
+//             SDL_Rect knob = {adsrPoints[i].x - 5, adsrPoints[i].y - 5, 10, 10};
+//             SDL_Point pt = {mouseX, mouseY};
+//             if (SDL_PointInRect(&pt, &knob)) {
+//                 draggingASDR[i] = true;
+//             }
+//         }
 
-        SDL_Point pt = {mouseX, mouseY};
-        if (SDL_PointInRect(&pt, &toggleBtn)) {
-            showASDRMode = !showASDRMode;
-        }
-        // 👽 Effects toggle button logic
-        if (SDL_PointInRect(&pt, &effectsBtn)) {
-            showEffectsMode = !showEffectsMode;
-        }
-    }
+//         SDL_Point pt = {mouseX, mouseY};
+//         if (SDL_PointInRect(&pt, &toggleBtn)) {
+//             showASDRMode = !showASDRMode;
+//         }
+//         // 👽 Effects toggle button logic
+//         if (SDL_PointInRect(&pt, &effectsBtn)) {
+//             showEffectsMode = !showEffectsMode;
+//         }
+//     }
 
-    if (event.type == SDL_MOUSEBUTTONUP) {
-        for (int i = 0; i < 4; ++i)
-            draggingASDR[i] = false;
-    }
+//     if (event.type == SDL_MOUSEBUTTONUP) {
+//         for (int i = 0; i < 4; ++i)
+//             draggingASDR[i] = false;
+//     }
 
-if (event.type == SDL_MOUSEMOTION) {
-    for (int i = 0; i < 4; ++i) {
-        if (draggingASDR[i]) {
-            int newX = std::clamp(event.motion.x, adsrBounds.x, adsrBounds.x + adsrBounds.w);
-            int newY = std::clamp(event.motion.y, adsrBounds.y, adsrBounds.y + adsrBounds.h);
+// if (event.type == SDL_MOUSEMOTION) {
+//     for (int i = 0; i < 4; ++i) {
+//         if (draggingASDR[i]) {
+//             int newX = std::clamp(event.motion.x, adsrBounds.x, adsrBounds.x + adsrBounds.w);
+//             int newY = std::clamp(event.motion.y, adsrBounds.y, adsrBounds.y + adsrBounds.h);
 
-            switch (i) {
-                case 0: // Attack - fixed X at left edge
-                    adsrPoints[0].x = adsrBounds.x;
-                    adsrPoints[0].y = newY;
-                    break;
-                case 1: // Decay - must be to right of Attack, before Sustain
-                    adsrPoints[1].x = std::clamp(newX, adsrPoints[0].x + 10, adsrPoints[2].x - 10);
-                    adsrPoints[1].y = newY;
-                    break;
-                case 2: // Sustain - must be after Decay, before Release
-                    adsrPoints[2].x = std::clamp(newX, adsrPoints[1].x + 10, adsrPoints[3].x - 10);
-                    adsrPoints[2].y = newY;
-                    break;
-                case 3: // Release - must be after Sustain
-                    adsrPoints[3].x = std::clamp(newX, adsrPoints[2].x + 10, adsrBounds.x + adsrBounds.w);
-                    adsrPoints[3].y = newY;
-                    break;
-            }
-        }
-    }
-}
+//             switch (i) {
+//                 case 0: // Attack - fixed X at left edge
+//                     adsrPoints[0].x = adsrBounds.x;
+//                     adsrPoints[0].y = newY;
+//                     break;
+//                 case 1: // Decay - must be to right of Attack, before Sustain
+//                     adsrPoints[1].x = std::clamp(newX, adsrPoints[0].x + 10, adsrPoints[2].x - 10);
+//                     adsrPoints[1].y = newY;
+//                     break;
+//                 case 2: // Sustain - must be after Decay, before Release
+//                     adsrPoints[2].x = std::clamp(newX, adsrPoints[1].x + 10, adsrPoints[3].x - 10);
+//                     adsrPoints[2].y = newY;
+//                     break;
+//                 case 3: // Release - must be after Sustain
+//                     adsrPoints[3].x = std::clamp(newX, adsrPoints[2].x + 10, adsrBounds.x + adsrBounds.w);
+//                     adsrPoints[3].y = newY;
+//                     break;
+//             }
+//         }
+//     }
+// }
 
 
-}
+// }
 
 
 
