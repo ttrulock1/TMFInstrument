@@ -2,6 +2,8 @@
 #define SHARED_BUFFER_H
 
 #include "ring_buffer.h"
+#include "adsr_engine.h" // 🌹 added for shared ADSR env
+
 #include <cstdint>
 #include <atomic>
 #include "sound.h"  // Include sound::WaveType definition
@@ -21,7 +23,7 @@ extern std::atomic<int> BPM;  // Beats per minute (atomic for thread-safety)
 struct NoteEvent {
     double frequency;
     double duration;
-    sound::ADSR env;
+    ADSR env; // 🌹 Correct, matches your new adsr_engine.h
 };
 
 extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
@@ -45,6 +47,15 @@ extern std::atomic<float> reverbDecay;
 extern std::atomic<float> reverbDamping;
 extern std::atomic<float> reverbMix;
 extern std::atomic<bool> reverbEnabled;
+
+// ADSR parameters controlled by UI
+extern std::atomic<float> uiAttackTime;
+extern std::atomic<float> uiDecayTime;
+extern std::atomic<float> uiSustainLevel;
+extern std::atomic<float> uiReleaseTime;
+extern std::atomic<float> uiEnvAmount;
+
+extern ADSR env; // 🌹 new global envelope for UI or preset logic
 
 
 #endif // SHARED_BUFFER_H

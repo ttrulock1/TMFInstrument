@@ -1,20 +1,39 @@
 #include "adsr_ui.h"
-
+#include "shared_buffer.h"
 #include <algorithm> // for std::clamp
 
 extern SDL_Rect toggleBtn;
 
 SDL_Rect adsrBounds = {30, 100, 800 / 2 - 60, 150};
-SDL_Point adsrPoints[4] = {
-    {30, 100}, {150, 100}, {200, 100}, {350, 350}
+SDL_Point adsrPoints[5] = {
+    {adsrBounds.x, adsrBounds.y + 50},                                  // Start
+    {adsrBounds.x + 80, adsrBounds.y + 100},                            // Attack peak
+    {adsrBounds.x + 160, adsrBounds.y + 90},                            // End of Decay
+    {adsrBounds.x + 240, adsrBounds.y + 90},                            // End of Sustain (same Y as [2])
+    {adsrBounds.x + adsrBounds.w, adsrBounds.y + adsrBounds.h}         // End of Release (bottom-right)
 };
 bool draggingASDR[4] = {false};
-bool showASDRMode = false;
+bool showASDRMode = true; // Start with ADSR graph visible
 
 float envAmount = 1.0f; // NEW: Envelope amount slider value
 SDL_Rect amountSlider = {adsrBounds.x, adsrBounds.y + adsrBounds.h + 20, adsrBounds.w, 10};
 
 void DrawADSREditor(SDL_Renderer* renderer) {
+    // 💙 Draw pseudo-text using retro-style block labels
+    // 💙 Draw ADSR segment labels and envelope value label
+    SDL_Color labelColor = {0, 255, 0, 255};
+        // 💙 Fake labels for A D S R using short green bars under each point
+    for (int i = 0; i < 4; ++i) {
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+        SDL_Rect bar = {adsrPoints[i].x - 2, adsrPoints[i].y + 12, 4, 10};
+        SDL_RenderFillRect(renderer, &bar);
+    }
+
+    // 💙 Fake "Envelope Amount" label using dashed line above the slider
+    for (int x = amountSlider.x; x < amountSlider.x + amountSlider.w; x += 8) {
+        SDL_RenderDrawLine(renderer, x, amountSlider.y + 15, x + 4, amountSlider.y + 15);
+    }
+    
     // 🌌 Draw retro radar-style grid background
     SDL_SetRenderDrawColor(renderer, 0, 60, 0, 255); // Dark green
     for (int x = adsrBounds.x; x < adsrBounds.x + adsrBounds.w; x += 20) {
@@ -28,7 +47,10 @@ void DrawADSREditor(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Bright green lines
     SDL_RenderDrawLine(renderer, adsrPoints[0].x, adsrPoints[0].y, adsrPoints[1].x, adsrPoints[1].y);
     SDL_RenderDrawLine(renderer, adsrPoints[1].x, adsrPoints[1].y, adsrPoints[2].x, adsrPoints[2].y);
-    SDL_RenderDrawLine(renderer, adsrPoints[2].x, adsrPoints[2].y, adsrPoints[3].x, adsrPoints[3].y);
+    SDL_RenderDrawLine(renderer, adsrPoints[2].x, adsrPoints[2].y, adsrPoints[3].x, adsrPoints[3].y); // Sustain
+    SDL_RenderDrawLine(renderer, adsrPoints[3].x, adsrPoints[3].y, adsrPoints[4].x, adsrPoints[4].y); // Release
+
+    
 
     // 🔘 Draw knobs
     for (int i = 0; i < 4; ++i) {
@@ -82,21 +104,49 @@ void HandleADSREvents(SDL_Event& event) {
                 int newY = std::clamp(event.motion.y, adsrBounds.y, adsrBounds.y + adsrBounds.h);
 
                 switch (i) {
-                    case 0: adsrPoints[0].x = adsrBounds.x; adsrPoints[0].y = newY; break;
+                    case 0:
+                        adsrPoints[0].x = adsrBounds.x;
+                        adsrPoints[0].y = newY;
+                        break;
                     case 1:
                         adsrPoints[1].x = std::clamp(newX, adsrPoints[0].x + 10, adsrPoints[2].x - 10);
                         adsrPoints[1].y = newY;
                         break;
                     case 2:
-                        adsrPoints[2].x = std::clamp(newX, adsrPoints[1].x + 10, adsrPoints[3].x - 10);
+                        adsrPoints[2].x = std::clamp(newX, adsrPoints[1].x + 10, adsrBounds.x + adsrBounds.w - 10);
                         adsrPoints[2].y = newY;
                         break;
                     case 3:
-                        adsrPoints[3].x = std::clamp(newX, adsrPoints[2].x + 10, adsrBounds.x + adsrBounds.w);
-                        adsrPoints[3].y = newY;
+                        adsrPoints[3].x = std::clamp(newX, adsrPoints[2].x + 10, adsrBounds.x + adsrBounds.w - 10);
+                        adsrPoints[3].y = adsrPoints[2].y;  // ✅ lock Y to match sustain level
                         break;
+
                 }
             }
         }
     }
+
+    adsrPoints[3].y = adsrPoints[2].y;
+
+        UpdateADSRParamsFromUI();  // 👈 this is key
+        // 👇 Add this after updating ADSR
+    adsrPoints[4].x = adsrBounds.x + adsrBounds.w;
+    adsrPoints[4].y = adsrBounds.y + adsrBounds.h;
+}
+
+void UpdateADSRParamsFromUI() {
+    float totalWidth = (float)(adsrBounds.w);
+    float totalHeight = (float)(adsrBounds.h);
+
+    float attackTime = (adsrPoints[1].x - adsrPoints[0].x) / totalWidth;
+    float decayTime  = (adsrPoints[2].x - adsrPoints[1].x) / totalWidth;
+    float sustainLevel = 1.0f - (adsrPoints[2].y - adsrBounds.y) / totalHeight;
+
+    // ✅ Release time based on vertical drop from sustain to release point
+    float releaseTime = (adsrPoints[4].x - adsrPoints[3].x) / totalWidth;
+
+    uiAttackTime.store(std::max(attackTime * 2.0f, 0.01f));
+    uiDecayTime.store(std::max(decayTime * 2.0f, 0.01f));
+    uiSustainLevel.store(std::clamp(sustainLevel, 0.0f, 1.0f));
+    uiReleaseTime.store(std::max(releaseTime * 2.0f, 0.01f));
 }

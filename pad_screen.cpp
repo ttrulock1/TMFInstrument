@@ -23,7 +23,7 @@ double padStartTime[NUM_PADS]; // in seconds
 void triggerPadNoteOn(int padIndex) {
     const double baseFreq = 261.63; // Middle C
     double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
-    sound::ADSR env = {0.01, 0.05, 0.8, 0.3};  // ASDR shape
+    ADSR env = {0.01f, 0.05f, 0.8f, 0.3f}; // 🌹 fixed to match adsr_engine.h
 
     // Save note-on time (for later calculation of duration)
     padStartTime[padIndex] = SDL_GetTicks() / 1000.0; // Convert to seconds

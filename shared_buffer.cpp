@@ -41,6 +41,12 @@ std::atomic<float> reverbDamping = 0.5f;
 std::atomic<float> reverbMix = 0.3f;
 std::atomic<bool> reverbEnabled = true;
 
+std::atomic<float> uiAttackTime = 0.01f;
+std::atomic<float> uiDecayTime = 0.1f;
+std::atomic<float> uiSustainLevel = 0.8f;
+std::atomic<float> uiReleaseTime = 0.1f;
+std::atomic<float> uiEnvAmount = 1.0f;
+
 
 
 RingBuffer<NoteEvent> padNoteEvents(128); // small queue for instant pad notes

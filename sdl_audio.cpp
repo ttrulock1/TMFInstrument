@@ -8,12 +8,14 @@ using sound::WaveType;
 #include <atomic>
 #include <cmath>  // for std::pow
 #include <algorithm> // for std::clamp
+#include "adsr_engine.h" // 💙 New ADSR engine integration
+
 
 // 🎯 Bring in externally declared ADSR control parameters
-extern std::atomic<float> attackTime;
-extern std::atomic<float> decayTime;
-extern std::atomic<float> sustainLevel;
-extern std::atomic<float> releaseTime;
+extern std::atomic<float> uiAttackTime;
+extern std::atomic<float> uiDecayTime;
+extern std::atomic<float> uiSustainLevel;
+extern std::atomic<float> uiReleaseTime;
 // ** doesn't this get declare somewhere else or is it needed in both places
 extern std::atomic<float> delayTime;
 extern std::atomic<float> delayFeedback;
@@ -33,21 +35,18 @@ struct Voice {
     double time = 0.0;
     double duration = 0.0;
     double frequency = 440.0;
-    sound::ADSR env;
+    ADSR ampEnv; // ✅ Now using ADSR engine
     WaveType wave;
 
 short getSample() {
-    short s = sound::GenerateWave(wave, time, duration, frequency, 0.5, env);
-    if (time >= duration) {
-        // 🍀 Softly fade sample tail instead of hard cutoff
-        s = static_cast<short>(s * 0.9); // exponential decay
-        // 🍀 Only deactivate when sample is basically silent
-        if (std::abs(s) < 128)
-            active = false;
-    }
+    float amplitude = ampEnv.process();  // 🌹 Correct ADSR process call
+    short s = sound::GenerateWave(wave, time, frequency, amplitude); // ✅ Clean + correct
+    if (ampEnv.state == ADSR::Idle)
+        active = false;
     time += 1.0 / SAMPLE_RATE;
     return s;
 }
+
 
 };
 
@@ -85,6 +84,9 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
             stepCounter = 0;
             stepIndex = (stepIndex + 1) % 16;
 
+            int note = 60;
+            double freq = 440.0 * std::pow(2.0, (note - 69) / 12.0);  // MIDI note → Hz
+
             if (stepSequence[stepIndex]) {
                 int pitchOffset = stepPitches[stepIndex].load();
                 double freq = baseFrequency * std::pow(2.0, pitchOffset / 12.0);
@@ -93,33 +95,49 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
                     .time = 0.0,
                     .duration = stepLength / static_cast<double>(SAMPLE_RATE),
                     .frequency = freq,
-                    .env = {
-                        attackTime.load(),
-                        decayTime.load(),
-                        sustainLevel.load(),
-                        releaseTime.load()
+                    .ampEnv = ADSR{
+                        uiAttackTime.load(),
+                        uiDecayTime.load(),
+                        uiSustainLevel.load(),
+                        uiReleaseTime.load()
                     },
                     .wave = currentWaveform.load()
                 };
+                seqVoice.ampEnv.noteOn(); // 🌹 CRITICAL FIX
+
+
             }
         }
 
-        // 🎯 Handle incoming pad notes
+            // 🌹 Corrected Pad Note Handling
         NoteEvent evt;
         if (padNoteEvents.pop(evt)) {
             if (evt.frequency < 0 && padVoice.active) {
-                padVoice.duration = padVoice.time + releaseTime.load(); 
+                padVoice.ampEnv.noteOff(); // 🌹 Trigger noteOff properly
             } else {
                 padVoice = Voice{
                     .active = true,
                     .time = 0.0,
                     .duration = evt.duration,
                     .frequency = evt.frequency,
-                    .env = evt.env,
+                    .ampEnv = ADSR{
+                        uiAttackTime.load(),
+                        uiDecayTime.load(),
+                        uiSustainLevel.load(),
+                        uiReleaseTime.load()
+                    },                    
                     .wave = currentWaveform.load()
                 };
+                padVoice.ampEnv.noteOn(); // 🌹 Trigger noteOn properly
             }
         }
+        // 🧨 Auto-release sequencer voice when step duration ends
+if (seqVoice.active &&
+    seqVoice.time >= seqVoice.duration &&
+    seqVoice.ampEnv.state != ADSR::Release &&
+    seqVoice.ampEnv.state != ADSR::Idle) {
+    seqVoice.ampEnv.noteOff();  // ✅ Trigger release phase
+}
 
         // 🍀 Get consistent dry sample (avoid double-advancing envelope)
         int seqSample = seqVoice.active ? seqVoice.getSample() : 0;
