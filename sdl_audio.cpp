@@ -5,6 +5,10 @@ using sound::WaveType;
 #include "delay.h"  // 🎯 Include our delay effect
 #include "reverb.h"
 #include "chorus.h"  // uncomment when created
+#include "lfo_engine.h"
+#include "lfo_ui.h"
+
+
 #include <atomic>
 #include <cmath>  // for std::pow
 #include <algorithm> // for std::clamp
@@ -138,6 +142,15 @@ if (seqVoice.active &&
     seqVoice.ampEnv.state != ADSR::Idle) {
     seqVoice.ampEnv.noteOff();  // ✅ Trigger release phase
 }
+// 💡 Modulate pitch using LFO if enabled
+// We sample the LFO once per sample frame (dt = 1 / SAMPLE_RATE)
+float lfoMod = lfo.sample(1.0f / SAMPLE_RATE);
+if (lfoTargetRouting.load() == 0) {
+    // Apply pitch modulation to sequencer voice (vibrato)
+    // 2^(x/12) shifts pitch in semitones; mod is centered around 0
+    seqVoice.frequency *= std::pow(2.0, lfoMod / 12.0);
+}
+
 
         // 🍀 Get consistent dry sample (avoid double-advancing envelope)
         int seqSample = seqVoice.active ? seqVoice.getSample() : 0;

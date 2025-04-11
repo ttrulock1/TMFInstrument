@@ -1,4 +1,5 @@
 #include "shared_buffer.h"
+#include "lfo_engine.h"
 #include "sound.h"
 
 bool stepSequence[16] = {0};  // All steps OFF initially
@@ -46,6 +47,9 @@ std::atomic<float> uiDecayTime = 0.1f;
 std::atomic<float> uiSustainLevel = 0.8f;
 std::atomic<float> uiReleaseTime = 0.1f;
 std::atomic<float> uiEnvAmount = 1.0f;
+
+
+LFO lfo;  // Add this global instance
 
 
 

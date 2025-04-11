@@ -1,6 +1,7 @@
 #include "adsr_ui.h"
 #include "shared_buffer.h"
 #include <algorithm> // for std::clamp
+#include "lfo_ui.h"
 
 extern SDL_Rect toggleBtn;
 
@@ -66,6 +67,13 @@ void DrawADSREditor(SDL_Renderer* renderer) {
     SDL_Rect sliderKnob = {knobX - 5, amountSlider.y - 3, 10, amountSlider.h + 6};
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     SDL_RenderFillRect(renderer, &sliderKnob);
+
+        // 🌀 Draw LFO editor on right side of ADSR page
+    int lfoX = adsrBounds.x + adsrBounds.w + 30;
+    int lfoY = adsrBounds.y;
+    int lfoWidth = 300;
+    int lfoHeight = adsrBounds.h;
+    DrawLFOEditor(renderer, lfoX, lfoY, lfoWidth, lfoHeight);
 }
 
 void HandleADSREvents(SDL_Event& event) {
@@ -124,6 +132,12 @@ void HandleADSREvents(SDL_Event& event) {
                 }
             }
         }
+                // 🔄 Pass event to LFO module
+        int lfoX = adsrBounds.x + adsrBounds.w + 30;
+        int lfoY = adsrBounds.y;
+        int lfoWidth = 300;
+        int lfoHeight = adsrBounds.h;
+        HandleLFOEvents(event, lfoX, lfoY, lfoWidth, lfoHeight);
     }
 
     adsrPoints[3].y = adsrPoints[2].y;
