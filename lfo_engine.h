@@ -2,6 +2,10 @@
 #pragma once
 #include <cmath>
 
+void ApplyLFOPitch(double& frequency);
+void ApplyLFOAmplitude(float& drySample);
+void ApplyLFOFilter(float& drySample);
+
 
 enum class LFOWaveform {
     Sine,

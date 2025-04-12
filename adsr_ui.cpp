@@ -77,6 +77,14 @@ void DrawADSREditor(SDL_Renderer* renderer) {
 }
 
 void HandleADSREvents(SDL_Event& event) {
+        // ✅ Always pass LFO events FIRST so all event types work
+    int lfoX = adsrBounds.x + adsrBounds.w + 30;
+    int lfoY = adsrBounds.y;
+    int lfoWidth = 300;
+    int lfoHeight = adsrBounds.h;
+    HandleLFOEvents(event, lfoX, lfoY, lfoWidth, lfoHeight);
+
+
     int mouseX = event.button.x;
     int mouseY = event.button.y;
 

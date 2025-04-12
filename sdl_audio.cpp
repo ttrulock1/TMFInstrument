@@ -144,11 +144,11 @@ if (seqVoice.active &&
 }
 // 💡 Modulate pitch using LFO if enabled
 // We sample the LFO once per sample frame (dt = 1 / SAMPLE_RATE)
-float lfoMod = lfo.sample(1.0f / SAMPLE_RATE);
-if (lfoTargetRouting.load() == 0) {
-    // Apply pitch modulation to sequencer voice (vibrato)
-    // 2^(x/12) shifts pitch in semitones; mod is centered around 0
-    seqVoice.frequency *= std::pow(2.0, lfoMod / 12.0);
+if (seqVoice.active) {
+    ApplyLFOPitch(seqVoice.frequency);
+}
+if (padVoice.active) {
+    ApplyLFOPitch(padVoice.frequency);
 }
 
 
@@ -157,6 +157,10 @@ if (lfoTargetRouting.load() == 0) {
         int padSample = padVoice.active ? padVoice.getSample() : 0;
         int sample = seqSample + padSample;
         float drySample = sample / 32768.0f;
+        ApplyLFOAmplitude(drySample);
+        ApplyLFOFilter(drySample);
+
+
 
         // // 🍀 Conditionally apply delay
         // float wetSample = delayEnabled.load()

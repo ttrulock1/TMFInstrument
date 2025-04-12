@@ -2,7 +2,7 @@
 
 #include "lfo_ui.h"
 #include "shared_buffer.h"
-#include "lfo_engine.h"  // ✅ ADD THIS
+#include "lfo_engine.h" 
 
 #include <cmath>
 #include <algorithm>
@@ -13,6 +13,7 @@ std::atomic<float> currentLFOValue = 0.0f;
 SDL_Rect sineBtn, squareBtn, triBtn;
 SDL_Rect rateSlider, depthSlider;
 SDL_Rect routingBtns[3];
+
 
 void DrawLFOEditor(SDL_Renderer* renderer, int x, int y, int w, int h) {
     SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
@@ -44,10 +45,23 @@ void DrawLFOEditor(SDL_Renderer* renderer, int x, int y, int w, int h) {
     sineBtn = {x, y + h + 10, 40, 20};
     squareBtn = {x + 50, y + h + 10, 40, 20};
     triBtn = {x + 100, y + h + 10, 40, 20};
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-    SDL_RenderDrawRect(renderer, &sineBtn);
-    SDL_RenderDrawRect(renderer, &squareBtn);
-    SDL_RenderDrawRect(renderer, &triBtn);
+// 🟧 Highlight selected waveform in orange, others in green
+auto highlightWaveBtn = [&](SDL_Rect& btn, LFOWaveform type) {
+    if (lfo.waveform == type) {
+        SDL_SetRenderDrawColor(renderer, 255, 130, 0, 255); // 🟧 active
+        SDL_RenderFillRect(renderer, &btn);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);   // 🟩 inactive
+        SDL_RenderFillRect(renderer, &btn);
+    }
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white border
+    SDL_RenderDrawRect(renderer, &btn);
+};
+
+highlightWaveBtn(sineBtn, LFOWaveform::Sine);
+highlightWaveBtn(squareBtn, LFOWaveform::Square);
+highlightWaveBtn(triBtn, LFOWaveform::Triangle);
+
 
     rateSlider = {x, y + h + 40, w, 10};
     SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
@@ -81,19 +95,39 @@ void DrawLFOEditor(SDL_Renderer* renderer, int x, int y, int w, int h) {
 
 
 void HandleLFOEvents(SDL_Event& event, int x, int y, int w, int h) {
-    if (event.type != SDL_MOUSEBUTTONDOWN && event.type != SDL_MOUSEMOTION) return;
-    int mx = event.button.x;
-    int my = event.button.y;
-    SDL_Point pt = {mx, my};
 
-    if (event.type == SDL_MOUSEBUTTONDOWN) {
-        if (SDL_PointInRect(&pt, &sineBtn)) lfo.waveform = LFOWaveform::Sine;
-        else if (SDL_PointInRect(&pt, &squareBtn)) lfo.waveform = LFOWaveform::Square;
-        else if (SDL_PointInRect(&pt, &triBtn)) lfo.waveform = LFOWaveform::Triangle;
-        for (int i = 0; i < 3; ++i)
-            if (SDL_PointInRect(&pt, &routingBtns[i]))
-                lfoTargetRouting.store(i);
+    
+int mx = 0, my = 0;
+if (event.type == SDL_MOUSEBUTTONDOWN) {
+    mx = event.button.x;
+    my = event.button.y;
+} else if (event.type == SDL_MOUSEMOTION) {
+    mx = event.motion.x;
+    my = event.motion.y;
+}
+
+SDL_Point pt = {mx, my};
+
+
+
+if (event.type == SDL_MOUSEBUTTONDOWN) {
+    if (SDL_PointInRect(&pt, &sineBtn)) {
+        lfo.waveform = LFOWaveform::Sine;
     }
+    if (SDL_PointInRect(&pt, &squareBtn)) {
+        lfo.waveform = LFOWaveform::Square;
+    }
+    if (SDL_PointInRect(&pt, &triBtn)) {
+        lfo.waveform = LFOWaveform::Triangle;
+    }
+
+    // ✅ Not nested — always run
+    for (int i = 0; i < 3; ++i) {
+        if (SDL_PointInRect(&pt, &routingBtns[i])) {
+            lfoTargetRouting.store(i);
+        }
+    }
+}
 
     if (SDL_PointInRect(&pt, &rateSlider)) {
         float norm = float(mx - rateSlider.x) / rateSlider.w;
@@ -115,5 +149,7 @@ void HandleLFOEvents(SDL_Event& event, int x, int y, int w, int h) {
             value = 2.0f * std::fabs(2.0f * (phase / (2 * M_PI) - std::floor(phase / (2 * M_PI) + 0.5))) - 1.0f;
             break;
     }
+
+    
     currentLFOValue.store(value * lfo.depth);
 }
