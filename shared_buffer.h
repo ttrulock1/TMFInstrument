@@ -8,6 +8,8 @@
 #include <atomic>
 #include "sound.h"  // Include sound::WaveType definition
 
+#include "scalekeybank.h"
+
 extern RingBuffer<int16_t> audioRingBuffer;
 extern bool stepSequence[16];  // Step on/off states for the 16 steps
 
@@ -58,6 +60,9 @@ extern std::atomic<float> uiEnvAmount;
 
 
 extern ADSR env; // 🌹 new global envelope for UI or preset logic
+
+extern ScaleBank scaleBank;  // Declare global reference to scaleBank
+
 
 
 #endif // SHARED_BUFFER_H

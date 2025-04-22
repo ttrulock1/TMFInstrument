@@ -7,6 +7,28 @@
 #include <cmath>
 #include <algorithm>
 
+// #include "<oscilloscope.h>"
+
+//Inside DrawLFOEditor(), just after defining the buttons and sliders, add:
+// // Create an instance of Oscilloscope for LFO display
+// static Oscilloscope lfoScope(256);  // 256 samples in the buffer
+
+// // Push the current LFO sample into the oscilloscope buffer
+// float lfoMod = lfo.sample(1.0f / SAMPLE_RATE);  // Get LFO value for the current sample
+// lfoScope.push(lfoMod);
+
+// this goes somether else
+
+//Define the display area for LFO waveform:
+
+// SDL_Rect lfoArea = {x, y + h + 110, 300, 100};  // Position under the sliders (adjust as needed)
+
+
+//Draw the oscilloscope waveform:
+
+// lfoScope.draw(renderer, lfoArea, {255, 130, 0, 255});  // Orange color for LFO visual
+
+
 std::atomic<int> lfoTargetRouting = 0;
 std::atomic<float> currentLFOValue = 0.0f;
 

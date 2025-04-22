@@ -80,7 +80,8 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
 
     int bpm = BPM.load();
     int stepLength = static_cast<int>((SAMPLE_RATE * 60.0) / (bpm * 4));  // samples per step
-    double baseFrequency = 440.0;
+    int keyMidiNote = 60 + scaleBank.getSelectedKey();  // C4 = 60, G = 67, etc.
+    double baseFrequency = 440.0 * std::pow(2.0, (keyMidiNote - 69) / 12.0);  // A4 = 440 Hz
 
     for (int i = 0; i < samples; ++i) {
         // 🎯 Step advancement
@@ -94,6 +95,12 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
             if (stepSequence[stepIndex]) {
                 int pitchOffset = stepPitches[stepIndex].load();
                 double freq = baseFrequency * std::pow(2.0, pitchOffset / 12.0);
+                freq = scaleBank.applyScale(freq);  // ✅ quantize to selected scale/key
+
+
+    // // Apply scale to the frequency
+    // baseFrequency = scaleBank.applyScale(baseFrequency);
+
                 seqVoice = Voice{
                     .active = true,
                     .time = 0.0,
@@ -119,6 +126,10 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
             if (evt.frequency < 0 && padVoice.active) {
                 padVoice.ampEnv.noteOff(); // 🌹 Trigger noteOff properly
             } else {
+        // Apply scale to the note
+        // double scaledFrequency = scaleBank.applyScale(evt.frequency);
+
+
                 padVoice = Voice{
                     .active = true,
                     .time = 0.0,
@@ -262,3 +273,17 @@ int main(int argc, char* argv[]) {
     SDL_Quit();
     return 0;
 }
+
+
+// void DrawScaleSelector(SDL_Renderer* renderer) {
+//     // Display the current scale on the screen
+//     std::string scaleName = scaleBank.getSelectedScale().name;
+//     // Render scaleName on screen (e.g., in a text field)
+// }
+
+// void HandleScaleChange(SDL_Event& event) {
+//     if (event.type == SDL_MOUSEBUTTONDOWN) {
+//         // When a button is pressed, change scale
+//         scaleBank.nextScale();  // Move to the next scale
+//     }
+// }

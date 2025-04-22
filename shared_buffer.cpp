@@ -51,6 +51,7 @@ std::atomic<float> uiEnvAmount = 1.0f;
 
 LFO lfo;  // Add this global instance
 
+ScaleBank scaleBank;  // ✅ This creates the global instance
 
 
 RingBuffer<NoteEvent> padNoteEvents(128); // small queue for instant pad notes
