@@ -1,6 +1,8 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <string>
+#include "shared_buffer.h"
+
 #include <iostream>
 #include "sequencemanager.h"
 
@@ -54,13 +56,32 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
                         case SDLK_RETURN:
                         case SDLK_s:
                             sequenceManager.setActiveSequence(selectedSlot);
-                            if (mode == SEQUENCE_SAVE) {
+                          if (mode == SEQUENCE_SAVE) {
+                                Sequence& seq = sequenceManager.getSequence(selectedSlot);
+                                for (int i = 0; i < Sequence::MAX_STEPS; ++i) {
+                                    seq.steps[i] = stepSequence[i];
+                                    seq.pitchOffset[i] = stepPitches[i].load();
+                                }
+                                seq.scaleIndex = scaleBank.getSelectedScaleIndex();
+                                seq.keyIndex = scaleBank.getSelectedKeyIndex();
+                                seq.name = "Slot " + std::to_string(selectedSlot);
                                 sequenceManager.SaveToFile("sequences.txt");
                                 std::cout << "💾 Saved to slot " << selectedSlot << "\n";
                             } else if (mode == SEQUENCE_LOAD) {
                                 sequenceManager.LoadFromFile("sequences.txt");
-                                std::cout << "📥 Loaded slot " << selectedSlot << "\n";
-                            }
+
+                                const Sequence& seq = sequenceManager.getSequence(selectedSlot);
+                                for (int i = 0; i < Sequence::MAX_STEPS; ++i) {
+                                    stepSequence[i] = seq.steps[i];
+                                    stepPitches[i].store(seq.pitchOffset[i]);
+                                }
+                                scaleBank.setSelectedScale(seq.scaleIndex);
+                                scaleBank.setSelectedKey(seq.keyIndex);
+
+                                std::cout << "📥 Loaded slot " << selectedSlot << ": " << seq.name << "\n";
+
+                                                            }
+
                             break;
                     }
                 }

@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include "shared_buffer.h"
 #include "sound.h"
+#include "arp.h"
 #include <thread>
 #include <cmath>
 #include <atomic> // ✅ NEW: Required for std::atomic<bool>
