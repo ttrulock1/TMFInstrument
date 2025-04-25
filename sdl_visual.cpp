@@ -4,6 +4,7 @@
 #include "adsr_ui.h"
 #include "scalekeybank_ui.h"
 #include "dev_menu.h"
+#include "arp_ui.h"
 #include "sound.h"
 #include <atomic>
 #include <string>
@@ -130,8 +131,9 @@ void StartOscilloscope(SDL_Renderer* renderer) {
         }
 
                 if (showPadMode) {
-        HandlePadEvents(event);   // <-- ADD THIS LINE
-        continue;                 // <-- ADD THIS LINE to skip other events in pad mode
+        HandlePadEvents(event);          ArpUI_HandleEvent(event);   // 
+        continue;                 // 
+
     }
 
             
@@ -219,6 +221,8 @@ HandleToggleButtonEvent(event);
         
         if (showPadMode) {
     DrawPads(renderer);            // Draws the pad screen UI
+    ArpUI_Draw(renderer);   // arp controls
+
     SDL_RenderPresent(renderer);   // Updates the screen to show pads immediately
     continue;                      // Skip the rest to avoid drawing other screens over pads
 }

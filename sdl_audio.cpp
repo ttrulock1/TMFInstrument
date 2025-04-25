@@ -7,6 +7,10 @@ using sound::WaveType;
 #include "chorus.h"  // uncomment when created
 #include "lfo_engine.h"
 #include "lfo_ui.h"
+#include "arp.h"
+//maybe delete this below line you figure it out.
+#include "arp_ui.h"  // ✅ make sure this is at the top
+
 
 
 #include <atomic>
@@ -120,9 +124,13 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
             }
         }
 
+        Arp_Update(); // ✅ Always step the arpeggiator every sample
+
             // 🌹 Corrected Pad Note Handling
         NoteEvent evt;
         if (padNoteEvents.pop(evt)) {
+
+
             if (evt.frequency < 0 && padVoice.active) {
                 padVoice.ampEnv.noteOff(); // 🌹 Trigger noteOff properly
             } else {
@@ -172,17 +180,6 @@ if (padVoice.active) {
         ApplyLFOFilter(drySample);
 
 
-
-        // // 🍀 Conditionally apply delay
-        // float wetSample = delayEnabled.load()
-        //     ? delayEffect.process(drySample)
-        //     : drySample;
-
-        // float mixed = drySample + wetSample * 0.5f;
-        // int finalSample = static_cast<int>(mixed * 32768.0f);
-
-        // 🔁 Apply effects in chain: Chorus → Delay → Reverb
-
 // 🎛️ Apply Chorus (if implemented)
 if (chorusEnabled.load()) {
     chorus.setRate(chorusRate.load());
@@ -191,7 +188,7 @@ if (chorusEnabled.load()) {
     drySample = chorus.process(drySample);
 }
 
-// ⏱️ Apply Delay
+// Apply Delay
 if (delayEnabled.load()) {
     delayEffect.setDelayTime(static_cast<int>(delayTime.load()));
     delayEffect.setFeedback(delayFeedback.load());
@@ -228,6 +225,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    ArpUI_Init(); // ✅ Inject test notes
+
+
     SDL_AudioSpec spec;
     spec.freq = SAMPLE_RATE;
     spec.format = AUDIO_S16SYS;
@@ -241,6 +241,9 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return -1;
     }
+
+    ArpUI_Init(); // ✅ Inject test notes
+
 
     SDL_Window* window = SDL_CreateWindow("Oscilloscope",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -273,17 +276,3 @@ int main(int argc, char* argv[]) {
     SDL_Quit();
     return 0;
 }
-
-
-// void DrawScaleSelector(SDL_Renderer* renderer) {
-//     // Display the current scale on the screen
-//     std::string scaleName = scaleBank.getSelectedScale().name;
-//     // Render scaleName on screen (e.g., in a text field)
-// }
-
-// void HandleScaleChange(SDL_Event& event) {
-//     if (event.type == SDL_MOUSEBUTTONDOWN) {
-//         // When a button is pressed, change scale
-//         scaleBank.nextScale();  // Move to the next scale
-//     }
-// }

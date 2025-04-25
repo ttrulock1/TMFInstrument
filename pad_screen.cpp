@@ -22,35 +22,44 @@ double padStartTime[NUM_PADS]; // in seconds
 
 // ✅ NEW: Called when a pad is pressed — creates the note but defers release
 void triggerPadNoteOn(int padIndex) {
-    const double baseFreq = 261.63; // Middle C
+    const double baseFreq = 261.63;
     double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
-    ADSR env = {0.01f, 0.05f, 0.8f, 0.3f}; // 🌹 fixed to match adsr_engine.h
+    ADSR env = {0.01f, 0.05f, 0.8f, 0.3f};
 
-    // Save note-on time (for later calculation of duration)
-    padStartTime[padIndex] = SDL_GetTicks() / 1000.0; // Convert to seconds
+    padStartTime[padIndex] = SDL_GetTicks() / 1000.0;
     padHeld[padIndex] = true;
 
-    // Push initial note event with dummy duration (will be updated on release)
-    NoteEvent note = {freq, 999.0, env};  // 🔥 duration will be overridden in audio thread
-    padNoteEvents.push(note);
+    if (Arp_IsActive()) {
+        Arp_AddNote(freq); // send to arpeggiator
+    } else {
+        NoteEvent note = {freq, 999.0, env};
+        padNoteEvents.push(note);
+    }
 }
+
 
 // ✅ NEW: Called when a pad is released — triggers duration stop
 void triggerPadNoteOff(int padIndex) {
     if (padHeld[padIndex]) {
         padHeld[padIndex] = false;
 
-        // Calculate real duration
-        double endTime = SDL_GetTicks() / 1000.0;
-        double duration = endTime - padStartTime[padIndex];
+        const double baseFreq = 261.63;
+        double freq = baseFreq * std::pow(2.0, padIndex / 12.0);
 
-        // 🔥 Push updated duration via release signal
-        NoteEvent releaseNote;
-        releaseNote.frequency = -padIndex;  // Negative freq = signal to update/release note
-        releaseNote.duration = duration;
-        padNoteEvents.push(releaseNote);  // Audio thread must handle this properly
+        if (Arp_IsActive()) {
+            Arp_RemoveNote(freq);
+        } else {
+            double endTime = SDL_GetTicks() / 1000.0;
+            double duration = endTime - padStartTime[padIndex];
+
+            NoteEvent releaseNote;
+            releaseNote.frequency = -padIndex;
+            releaseNote.duration = duration;
+            padNoteEvents.push(releaseNote);
+        }
     }
 }
+
 
 // ✅ OLD: Replaced by triggerPadNoteOn + triggerPadNoteOff
 /*

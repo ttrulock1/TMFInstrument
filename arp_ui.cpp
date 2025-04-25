@@ -13,9 +13,16 @@ static int currentRate = 4; // 16th notes
 static bool arpEnabled = true;
 
 void ArpUI_Init() {
+
+
     Arp_Enable(true);
     Arp_SetMode(currentMode);
     Arp_SetRate(currentRate);
+    // Inject a C major triad for test
+        Arp_AddNote(261.63); // C4
+        Arp_AddNote(329.63); // E4
+        Arp_AddNote(392.00); // G4
+        Arp_Enable(true);    // Turn on the arpeggiator for testing
 }
 
 void ArpUI_HandleEvent(SDL_Event& event) {
