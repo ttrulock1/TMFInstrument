@@ -242,9 +242,6 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    ArpUI_Init(); // ✅ Inject test notes
-
-
     SDL_Window* window = SDL_CreateWindow("Oscilloscope",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 400, SDL_WINDOW_SHOWN);
