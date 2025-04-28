@@ -6,6 +6,22 @@ bool stepSequence[16] = {0};  // All steps OFF initially
 
 RingBuffer<int16_t> audioRingBuffer(16384);
 
+// Oscillator parameters
+std::atomic<float> oscSawLevel {0.5f};
+std::atomic<float> oscSquareLevel {0.5f};
+std::atomic<float> oscSineLevel {0.5f};
+std::atomic<float> oscSubLevel {0.5f};
+std::atomic<float> oscVolume {0.8f};
+
+std::atomic<float> oscPWMAmount {0.0f};
+std::atomic<float> oscMetalizerAmount {0.0f};
+std::atomic<float> oscUltrasawAmount {0.0f};
+std::atomic<float> oscSaturationAmount {0.0f};
+std::atomic<float> oscNoiseAmount {0.0f};
+
+
+
+
 // Define the pitch offset array for 16 steps (initially all zeros = no pitch shift)
 std::atomic<int> stepPitches[16];  // Defaults to 0 semitone offset for each step
 

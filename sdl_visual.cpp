@@ -4,6 +4,8 @@
 #include "adsr_ui.h"
 #include "scalekeybank_ui.h"
 #include "dev_menu.h"
+#include "oscillator_ui.h"
+
 #include "arp_ui.h"
 #include "sound.h"
 #include <atomic>
@@ -113,13 +115,15 @@ void StartOscilloscope(SDL_Renderer* renderer) {
 
     ScalekeyBankUI scaleUI(scaleBank);  // uses global scaleBank
 
-
-
     bool quit = false;
+    bool advancedMode = false;
+
+
     while (!quit) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
                 scaleUI.HandleEvents(event);
+                HandleOscillatorUIEvents(event, advancedMode);
 
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE))
                 quit = true;
@@ -251,7 +255,8 @@ HandleToggleButtonEvent(event);
 
         // 🎹 Draw Scale & Key Dropdowns
         scaleUI.Draw(renderer, font);
-
+        DrawOscillatorUI(renderer, advancedMode);
+        
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_Rect bar = {SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT};
         SDL_RenderFillRect(renderer, &bar);
@@ -260,11 +265,17 @@ HandleToggleButtonEvent(event);
         SDL_Rect knob = {knobX - 5, SLIDER_Y, 10, SLIDER_HEIGHT};
         SDL_RenderFillRect(renderer, &knob);
 
-        SDL_Color color = {255, 255, 255, 255};
+        SDL_Color color = {0, 0, 0, 255}; 
         std::string bpmStr = "BPM: " + std::to_string(BPM.load());
         SDL_Surface* surface = TTF_RenderText_Solid(font, bpmStr.c_str(), color);
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_Rect textRect = {SLIDER_X + SLIDER_WIDTH + 20, SLIDER_Y, surface->w, surface->h};
+        // 🧠 Center the text inside the BPM slider bar
+        SDL_Rect textRect = {
+            SLIDER_X + (SLIDER_WIDTH - surface->w) / 2,
+            SLIDER_Y + (SLIDER_HEIGHT - surface->h) / 2,
+            surface->w,
+            surface->h
+        };        
         SDL_RenderCopy(renderer, texture, NULL, &textRect);
         SDL_FreeSurface(surface);
         SDL_DestroyTexture(texture);

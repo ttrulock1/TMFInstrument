@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <atomic>
 #include "sound.h"  // Include sound::WaveType definition
+// constexpr double SAMPLE_RATE = 44100.0;
+
 
 #include "scalekeybank.h"
 
@@ -29,6 +31,19 @@ struct NoteEvent {
 };
 
 extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
+
+// 🌟 Oscillator Parameters (for Synth Presets)
+extern std::atomic<float> oscSawLevel;
+extern std::atomic<float> oscSquareLevel;
+extern std::atomic<float> oscSineLevel;
+extern std::atomic<float> oscSubLevel;
+extern std::atomic<float> oscVolume;
+
+extern std::atomic<float> oscPWMAmount;
+extern std::atomic<float> oscMetalizerAmount;
+extern std::atomic<float> oscUltrasawAmount;
+extern std::atomic<float> oscSaturationAmount;
+extern std::atomic<float> oscNoiseAmount;
 
 // 🌊 Chorus parameters
 extern std::atomic<float> chorusRate;

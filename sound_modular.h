@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #define TWOPI 6.28318530718
-const double SAMPLE_RATE = 44100.0;
+constexpr double SAMPLE_RATE = 44100.0;
 
 namespace sound_modular {
 

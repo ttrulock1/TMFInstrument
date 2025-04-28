@@ -2,6 +2,7 @@
 #include "lfo_ui.h"
 
 #include "shared_buffer.h"
+#include "sound_modular.h"
 #include <cmath>
 #include <algorithm> // for std::clamp
 

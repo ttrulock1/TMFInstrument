@@ -4,7 +4,7 @@
 #include <cmath>
 
 #define TWOPI 6.28318530718
-const double SAMPLE_RATE = 44100.0;
+// const double SAMPLE_RATE = 44100.0;
 
 namespace sound {
 

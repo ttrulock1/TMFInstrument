@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
-#include "sound.h"
-using sound::WaveType;
+// #include "sound.h"
+// using sound::WaveType;
+#include "sound_modular.h"
+using sound_modular::ModularVoice;
 #include "shared_buffer.h"
 #include "delay.h"  // 🎯 Include our delay effect
 #include "reverb.h"
@@ -37,30 +39,32 @@ void StartOscilloscope(SDL_Renderer* renderer);
 const int BUFFER_SIZE = 8192;
 static uint64_t totalSamples = 0;  // Continuous sample counter
 
-// 🎯 Voice struct: reusable note-in-progress
-struct Voice {
-    bool active = false;
-    double time = 0.0;
-    double duration = 0.0;
-    double frequency = 440.0;
-    ADSR ampEnv; // ✅ Now using ADSR engine
-    WaveType wave;
+// // 🎯 Voice struct: reusable note-in-progress
+// struct SoundHVoice {
+//     bool active = false;
+//     double time = 0.0;
+//     double duration = 0.0;
+//     double frequency = 440.0;
+//     ADSR ampEnv; // ✅ Now using ADSR engine
+//     WaveType wave;
 
-short getSample() {
-    float amplitude = ampEnv.process();  // 🌹 Correct ADSR process call
-    short s = sound::GenerateWave(wave, time, frequency, amplitude); // ✅ Clean + correct
-    if (ampEnv.state == ADSR::Idle)
-        active = false;
-    time += 1.0 / SAMPLE_RATE;
-    return s;
-}
-
-
-};
+// short getSample() {
+//     float amplitude = ampEnv.process();  // 🌹 Correct ADSR process call
+//     short s = sound::GenerateWave(wave, time, frequency, amplitude); // ✅ Clean + correct
+//     if (ampEnv.state == ADSR::Idle)
+//         active = false;
+//     time += 1.0 / SAMPLE_RATE;
+//     return s;
+// }
+// };
 
 // 🎯 Two active voices (duophonic)
-static Voice padVoice;
-static Voice seqVoice;
+// static SoundHVoice padVoice;
+// static SoundHVoice seqVoice;
+
+static ModularVoice padVoice;
+static ModularVoice seqVoice;
+
 
 // 🎯 Global delay effect — 44100 = 1 second buffer, 500ms default delay
 static Delay delayEffect(SAMPLE_RATE, 1000);
@@ -105,22 +109,46 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
     // // Apply scale to the frequency
     // baseFrequency = scaleBank.applyScale(baseFrequency);
 
-                seqVoice = Voice{
-                    .active = true,
-                    .time = 0.0,
-                    .duration = stepLength / static_cast<double>(SAMPLE_RATE),
-                    .frequency = freq,
-                    .ampEnv = ADSR{
-                        uiAttackTime.load(),
-                        uiDecayTime.load(),
-                        uiSustainLevel.load(),
-                        uiReleaseTime.load()
-                    },
-                    .wave = currentWaveform.load()
+                // seqVoice = SoundHVoice{
+                //     .active = true,
+                //     .time = 0.0,
+                //     .duration = stepLength / static_cast<double>(SAMPLE_RATE),
+                //     .frequency = freq,
+                //     .ampEnv = ADSR{
+                //         uiAttackTime.load(),
+                //         uiDecayTime.load(),
+                //         uiSustainLevel.load(),
+                //         uiReleaseTime.load()
+                //     },
+                //     .wave = currentWaveform.load()
+                // };
+                // seqVoice.ampEnv.noteOn(); // 🌹 CRITICAL FIX
+                seqVoice.active = true;
+                seqVoice.time = 0.0;
+                seqVoice.duration = stepLength / static_cast<double>(SAMPLE_RATE);
+                seqVoice.frequency = freq;
+
+                // Setup ADSR properly
+                seqVoice.ampEnv = sound_modular::ADSR{
+                    uiAttackTime.load(),
+                    uiDecayTime.load(),
+                    uiSustainLevel.load(),
+                    uiReleaseTime.load()
                 };
-                seqVoice.ampEnv.noteOn(); // 🌹 CRITICAL FIX
+                seqVoice.ampEnv.noteOn();
 
+                // Setup oscillator levels
+                seqVoice.sawLevel = oscSawLevel.load();
+                seqVoice.squareLevel = oscSquareLevel.load();
+                seqVoice.sineLevel = oscSineLevel.load();
+                seqVoice.subLevel = oscSubLevel.load();
+                seqVoice.volume = oscVolume.load();
 
+                seqVoice.pwmAmount = oscPWMAmount.load();
+                seqVoice.metalAmount = oscMetalizerAmount.load();
+                seqVoice.ultrasawAmount = oscUltrasawAmount.load();
+                seqVoice.saturationAmount = oscSaturationAmount.load();
+                seqVoice.volume = oscVolume.load();
             }
         }
 
@@ -138,27 +166,36 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
         // double scaledFrequency = scaleBank.applyScale(evt.frequency);
 
 
-                padVoice = Voice{
-                    .active = true,
-                    .time = 0.0,
-                    .duration = evt.duration,
-                    .frequency = evt.frequency,
-                    .ampEnv = ADSR{
-                        uiAttackTime.load(),
-                        uiDecayTime.load(),
-                        uiSustainLevel.load(),
-                        uiReleaseTime.load()
-                    },                    
-                    .wave = currentWaveform.load()
-                };
-                padVoice.ampEnv.noteOn(); // 🌹 Trigger noteOn properly
-            }
-        }
-        // 🧨 Auto-release sequencer voice when step duration ends
+        padVoice.active = true;
+        padVoice.time = 0.0;
+        padVoice.duration = evt.duration;
+        padVoice.frequency = evt.frequency;
+        padVoice.ampEnv = sound_modular::ADSR{
+            uiAttackTime.load(),
+            uiDecayTime.load(),
+            uiSustainLevel.load(),
+            uiReleaseTime.load()
+        };
+            padVoice.sawLevel = oscSawLevel.load();
+            padVoice.squareLevel = oscSquareLevel.load();
+            padVoice.sineLevel = oscSineLevel.load();
+            padVoice.subLevel = oscSubLevel.load();
+            padVoice.volume = oscVolume.load();
+            padVoice.pwmAmount = oscPWMAmount.load();
+            padVoice.metalAmount = oscMetalizerAmount.load();
+            padVoice.ultrasawAmount = oscUltrasawAmount.load();
+            padVoice.saturationAmount = oscSaturationAmount.load();
+            padVoice.volume = oscVolume.load();
+
+
+        padVoice.ampEnv.noteOn();
+    }
+}
+        // Auto-release sequencer voice when step duration ends
 if (seqVoice.active &&
     seqVoice.time >= seqVoice.duration &&
-    seqVoice.ampEnv.state != ADSR::Release &&
-    seqVoice.ampEnv.state != ADSR::Idle) {
+    seqVoice.ampEnv.state != sound_modular::ADSR::Release &&
+    seqVoice.ampEnv.state != sound_modular::ADSR::Idle) {
     seqVoice.ampEnv.noteOff();  // ✅ Trigger release phase
 }
 // 💡 Modulate pitch using LFO if enabled
@@ -241,6 +278,9 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return -1;
     }
+
+    ArpUI_Init(); // ✅ Inject test notes
+
 
     SDL_Window* window = SDL_CreateWindow("Oscilloscope",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
