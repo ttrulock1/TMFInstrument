@@ -1,17 +1,19 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <string>
-#include "shared_buffer.h"
-
 #include <iostream>
+#include "shared_buffer.h"
 #include "sequencemanager.h"
+#include "presetmanager.h"
 
 SequenceManager sequenceManager;
 
 enum DevMenuMode {
     MAIN_MENU,
     SEQUENCE_SAVE,
-    SEQUENCE_LOAD
+    SEQUENCE_LOAD,
+    SYNTH_SAVE,
+    SYNTH_LOAD
 };
 
 bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
@@ -27,7 +29,6 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
             if (event.type == SDL_KEYDOWN) {
                 SDL_Keycode key = event.key.keysym.sym;
 
-                // ESC always exits or returns to main menu
                 if (key == SDLK_ESCAPE || key == SDLK_SPACE) {
                     if (mode == MAIN_MENU)
                         running = false;
@@ -37,15 +38,14 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
 
                 if (mode == MAIN_MENU) {
                     switch (key) {
-                        case SDLK_3:
-                            mode = SEQUENCE_SAVE;
-                            break;
-                        case SDLK_4:
-                            mode = SEQUENCE_LOAD;
-                            break;
-                        // Add more entries here like SDLK_1, SDLK_2 for synth
+                        case SDLK_1: mode = SYNTH_SAVE; break;
+                        case SDLK_2: mode = SYNTH_LOAD; break;
+                        case SDLK_3: mode = SEQUENCE_SAVE; break;
+                        case SDLK_4: mode = SEQUENCE_LOAD; break;
                     }
-                } else if (mode == SEQUENCE_SAVE || mode == SEQUENCE_LOAD) {
+                }
+
+                else if (mode == SEQUENCE_SAVE || mode == SEQUENCE_LOAD) {
                     switch (key) {
                         case SDLK_LEFT:
                             selectedSlot = (selectedSlot + 47) % 48;
@@ -56,7 +56,7 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
                         case SDLK_RETURN:
                         case SDLK_s:
                             sequenceManager.setActiveSequence(selectedSlot);
-                          if (mode == SEQUENCE_SAVE) {
+                            if (mode == SEQUENCE_SAVE) {
                                 Sequence& seq = sequenceManager.getSequence(selectedSlot);
                                 for (int i = 0; i < Sequence::MAX_STEPS; ++i) {
                                     seq.steps[i] = stepSequence[i];
@@ -66,10 +66,9 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
                                 seq.keyIndex = scaleBank.getSelectedKeyIndex();
                                 seq.name = "Slot " + std::to_string(selectedSlot);
                                 sequenceManager.SaveToFile("sequences.txt");
-                                std::cout << "💾 Saved to slot " << selectedSlot << "\n";
-                            } else if (mode == SEQUENCE_LOAD) {
+                                std::cout << "💾 Saved Sequence to slot " << selectedSlot << "\n";
+                            } else {
                                 sequenceManager.LoadFromFile("sequences.txt");
-
                                 const Sequence& seq = sequenceManager.getSequence(selectedSlot);
                                 for (int i = 0; i < Sequence::MAX_STEPS; ++i) {
                                     stepSequence[i] = seq.steps[i];
@@ -77,11 +76,35 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
                                 }
                                 scaleBank.setSelectedScale(seq.scaleIndex);
                                 scaleBank.setSelectedKey(seq.keyIndex);
+                                std::cout << "📥 Loaded Sequence slot " << selectedSlot << ": " << seq.name << "\n";
+                            }
+                            break;
+                    }
+                }
 
-                                std::cout << "📥 Loaded slot " << selectedSlot << ": " << seq.name << "\n";
-
-                                                            }
-
+                else if (mode == SYNTH_SAVE || mode == SYNTH_LOAD) {
+                    switch (key) {
+                        case SDLK_LEFT:
+                            selectedSlot = (selectedSlot + 8) % 9; // 9 preset slots
+                            break;
+                        case SDLK_RIGHT:
+                            selectedSlot = (selectedSlot + 1) % 9;
+                            break;
+                        case SDLK_RETURN:
+                        case SDLK_s:
+                            {
+                                std::string filename = "presets/custom" + std::to_string(selectedSlot) + ".mfpreset";
+                                if (mode == SYNTH_SAVE) {
+                                    SaveCurrentPreset(filename);
+                                    std::cout << "💾 Saved Synth Preset to " << filename << "\n";
+                                } else {
+                                    if (LoadPreset(filename)) {
+                                        std::cout << "📥 Loaded Synth Preset from " << filename << "\n";
+                                    } else {
+                                        std::cout << "⚠️ Failed to load preset: " << filename << "\n";
+                                    }
+                                }
+                            }
                             break;
                     }
                 }
@@ -91,26 +114,35 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
         // DRAW UI
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
         SDL_Color white = {255, 255, 255, 255};
         std::string message;
 
         if (mode == MAIN_MENU) {
             message =
                 "DEV MENU\n\n"
-                "[1] Save Synth (disabled)\n"
-                "[2] Load Synth (disabled)\n"
+                "[1] Save Synth Preset →\n"
+                "[2] Load Synth Preset →\n"
                 "[3] Save Sequences →\n"
                 "[4] Load Sequences →\n"
                 "[ESC or SPACE] Exit";
         } else {
-            std::string title = (mode == SEQUENCE_SAVE) ? "SAVE TO SLOT" : "LOAD FROM SLOT";
-            Sequence& seq = sequenceManager.getSequence(selectedSlot);
+            std::string title;
+            if (mode == SEQUENCE_SAVE) title = "SAVE SEQUENCE TO SLOT";
+            else if (mode == SEQUENCE_LOAD) title = "LOAD SEQUENCE FROM SLOT";
+            else if (mode == SYNTH_SAVE) title = "SAVE SYNTH PRESET";
+            else if (mode == SYNTH_LOAD) title = "LOAD SYNTH PRESET";
+
             message = title + "\n\n";
             message += "← / →  Select Slot\n";
             message += "[Enter] to Confirm\n[ESC or SPACE] to Go Back\n\n";
             message += "▶ SLOT " + std::to_string(selectedSlot) + "\n";
-            message += "   Name: " + seq.name + "\n";
+
+            if (mode == SEQUENCE_SAVE || mode == SEQUENCE_LOAD) {
+                const Sequence& seq = sequenceManager.getSequence(selectedSlot);
+                message += "   Name: " + seq.name + "\n";
+            } else {
+                message += "   File: custom" + std::to_string(selectedSlot) + ".mfpreset\n";
+            }
         }
 
         SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, message.c_str(), white, 600);
