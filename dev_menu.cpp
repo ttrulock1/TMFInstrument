@@ -5,6 +5,9 @@
 #include "shared_buffer.h"
 #include "sequencemanager.h"
 #include "presetmanager.h"
+#include "oscillator_ui.h"
+#include "adsr_ui.h"
+
 
 SequenceManager sequenceManager;
 
@@ -99,6 +102,8 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
                                     std::cout << "💾 Saved Synth Preset to " << filename << "\n";
                                 } else {
                                     if (LoadPreset(filename)) {
+                                        RefreshOscillatorSliders();
+                                        RefreshADSRFromBuffer(); 
                                         std::cout << "📥 Loaded Synth Preset from " << filename << "\n";
                                     } else {
                                         std::cout << "⚠️ Failed to load preset: " << filename << "\n";
@@ -155,6 +160,8 @@ bool ShowDevMenu(SDL_Renderer* renderer, TTF_Font* font) {
         SDL_RenderPresent(renderer);
         SDL_Delay(16);
     }
+
+
 
     return true;
 }

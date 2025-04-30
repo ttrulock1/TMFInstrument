@@ -5,14 +5,38 @@
 #include <algorithm>
 #include "shared_buffer.h"
 
+// ✅ Move this to the top BEFORE using Slider
 struct Slider {
     SDL_Rect rect;
-    float value = 0.5f;  // Default midpoint
+    float value = 0.5f;
     std::string label;
 };
 
-static std::vector<Slider> easySliders;
-static std::vector<Slider> advancedSliders;
+std::vector<Slider> easySliders;
+std::vector<Slider> advancedSliders;
+
+void RefreshOscillatorSliders() {
+    easySliders[0].value = oscSawLevel.load();
+    easySliders[1].value = oscSquareLevel.load();
+    easySliders[2].value = oscSineLevel.load();
+    easySliders[3].value = oscSubLevel.load();
+    easySliders[4].value = oscVolume.load();
+
+    advancedSliders[5].value = oscPWMAmount.load();
+    advancedSliders[6].value = oscMetalizerAmount.load();
+    advancedSliders[7].value = oscUltrasawAmount.load();
+    advancedSliders[8].value = oscSaturationAmount.load();
+    advancedSliders[9].value = oscNoiseAmount.load();
+}
+
+// struct Slider {
+//     SDL_Rect rect;
+//     float value = 0.5f;  // Default midpoint
+//     std::string label;
+// };
+
+// static std::vector<Slider> easySliders;
+// static std::vector<Slider> advancedSliders;
 static SDL_Rect toggleButton = {10, 130, 50, 30};
 
 void InitOscillatorUI() {

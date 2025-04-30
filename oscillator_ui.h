@@ -4,3 +4,5 @@
 
 void DrawOscillatorUI(SDL_Renderer* renderer, bool advancedMode);
 void HandleOscillatorUIEvents(SDL_Event& event, bool& advancedMode);
+
+void RefreshOscillatorSliders();

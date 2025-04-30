@@ -10,6 +10,8 @@ extern bool showASDRMode;
 
 void DrawADSREditor(SDL_Renderer* renderer);
 void HandleADSREvents(SDL_Event& event);
-void UpdateADSRParamsFromUI();  // 👈 add this line
+void UpdateADSRParamsFromUI();  
+void RefreshADSRFromBuffer();  
+
 
 #endif

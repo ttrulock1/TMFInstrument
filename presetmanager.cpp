@@ -2,6 +2,7 @@
 #include "presetmanager.h"
 #include "shared_buffer.h"
 #include "lfo_engine.h"
+#include "oscillator_ui.h"  
 #include <fstream>
 #include <filesystem> // for optional preset listing
 namespace fs = std::filesystem;
@@ -28,10 +29,9 @@ void SaveCurrentPreset(const std::string& filename) {
     preset.releaseTime = uiReleaseTime.load();
     preset.envAmount = uiEnvAmount.load();
 
-    // preset.lfoRate = lfoRateHz.load();
-    // preset.lfoDepth = lfoDepth.load();
-    // preset.lfoWaveform = lfoWaveform.load();
-
+    preset.lfoRate = lfo.rateHz;
+    preset.lfoDepth = lfo.depth;
+    preset.lfoWaveform = static_cast<int>(lfo.waveform);
 
     preset.chorusEnabled = chorusEnabled.load();
     preset.chorusRate = chorusRate.load();
@@ -89,9 +89,11 @@ bool LoadPreset(const std::string& filename) {
     uiReleaseTime.store(preset.releaseTime);
     uiEnvAmount.store(preset.envAmount);
 
-    // lfoRateHz.store(preset.lfoRate);
-    // lfoDepth.store(preset.lfoDepth);
-    // lfoWaveform.store(preset.lfoWaveform);
+    // 👻 ghost: load LFO
+    lfo.rateHz = preset.lfoRate;
+    lfo.depth = preset.lfoDepth;
+    lfo.waveform = static_cast<LFOWaveform>(preset.lfoWaveform);
+
 
 
     chorusEnabled.store(preset.chorusEnabled);
@@ -111,7 +113,6 @@ bool LoadPreset(const std::string& filename) {
     reverbMix.store(preset.reverbMix);
 
     // currentWaveform.store(preset.mainWaveform);
-
     return true;
 }
 

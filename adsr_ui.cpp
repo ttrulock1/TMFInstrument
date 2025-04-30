@@ -3,6 +3,29 @@
 #include <algorithm> // for std::clamp
 #include "lfo_ui.h"
 
+// Allows memory recall: refreshed from shared buffer
+void RefreshADSRFromBuffer() {
+    float totalWidth = (float)(adsrBounds.w);
+    float totalHeight = (float)(adsrBounds.h);
+
+    float atk = uiAttackTime.load() / 2.0f;
+    float dec = uiDecayTime.load() / 2.0f;
+    float sus = 1.0f - std::clamp(uiSustainLevel.load(), 0.0f, 1.0f);
+    float rel = uiReleaseTime.load() / 2.0f;
+
+    int x0 = adsrBounds.x;
+    int x1 = x0 + int(atk * totalWidth);
+    int x2 = x1 + int(dec * totalWidth);
+    int x3 = x2 + int(rel * totalWidth);  // ghost: approximate x-position of release phase
+    int x4 = adsrBounds.x + adsrBounds.w;
+
+    adsrPoints[0] = {x0, adsrBounds.y + adsrBounds.h};              // Start (bottom left)
+    adsrPoints[1] = {x1, adsrBounds.y};                             // Attack peak
+    adsrPoints[2] = {x2, adsrBounds.y + int(sus * totalHeight)};    // Decay to sustain
+    adsrPoints[3] = {x3, adsrPoints[2].y};                          // Sustain hold
+    adsrPoints[4] = {x4, adsrBounds.y + adsrBounds.h};              // Release to bottom
+}
+
 extern SDL_Rect toggleBtn;
 
 SDL_Rect adsrBounds = {30, 100, 800 / 2 - 60, 150};
