@@ -1,4 +1,3 @@
-// oscillator_ui.cpp
 #include "oscillator_ui.h"
 #include <vector>
 #include <string>
@@ -22,11 +21,11 @@ void RefreshOscillatorSliders() {
     easySliders[3].value = oscSubLevel.load();
     easySliders[4].value = oscVolume.load();
 
-    advancedSliders[5].value = oscPWMAmount.load();
-    advancedSliders[6].value = oscMetalizerAmount.load();
-    advancedSliders[7].value = oscUltrasawAmount.load();
-    advancedSliders[8].value = oscSaturationAmount.load();
-    advancedSliders[9].value = oscNoiseAmount.load();
+    advancedSliders[0].value = oscPWMAmount.load();
+    advancedSliders[1].value = oscMetalizerAmount.load();
+    advancedSliders[2].value = oscUltrasawAmount.load();
+    advancedSliders[3].value = oscSaturationAmount.load();
+    advancedSliders[4].value = oscNoiseAmount.load();
 }
 
 // struct Slider {
@@ -43,24 +42,34 @@ void InitOscillatorUI() {
     int leftColumnX = 80;   // start closer to the red buttons
     int startY = 10;        // align vertically with red buttons
     int spacingY = 40;      // tighter vertical stacking
-    int rightColumnX = 1100;
     int sliderWidth = 100;
     int sliderHeight = 10;
 
     easySliders = {
-        {{leftColumnX, startY + 0 * spacingY, sliderWidth, sliderHeight}, 0.5f, "Saw"},
-        {{leftColumnX, startY + 1 * spacingY, sliderWidth, sliderHeight}, 0.5f, "Square"},
-        {{leftColumnX, startY + 2 * spacingY, sliderWidth, sliderHeight}, 0.5f, "Sine"},
-        {{leftColumnX, startY + 3 * spacingY, sliderWidth, sliderHeight}, 0.5f, "Sub"},
-        {{leftColumnX, startY + 4 * spacingY, sliderWidth, sliderHeight}, 0.8f, "Volume"},
+        {{leftColumnX, startY + 0 * spacingY, sliderWidth, sliderHeight}, 0.5f,
+"Saw"},
+        {{leftColumnX, startY + 1 * spacingY, sliderWidth, sliderHeight}, 0.5f,
+"Square"},
+        {{leftColumnX, startY + 2 * spacingY, sliderWidth, sliderHeight}, 0.5f,
+"Sine"},
+        {{leftColumnX, startY + 3 * spacingY, sliderWidth, sliderHeight}, 0.5f,
+"Sub"},
+        {{leftColumnX, startY + 4 * spacingY, sliderWidth, sliderHeight}, 0.8f,
+"Volume"},
     };
 
-    advancedSliders = easySliders;
-    advancedSliders.push_back({{rightColumnX, startY + 0 * spacingY, sliderWidth, sliderHeight}, 0.0f, "PWM"});
-    advancedSliders.push_back({{rightColumnX, startY + 1 * spacingY, sliderWidth, sliderHeight}, 0.0f, "Metalizer"});
-    advancedSliders.push_back({{rightColumnX, startY + 2 * spacingY, sliderWidth, sliderHeight}, 0.0f, "Ultrasaw"});
-    advancedSliders.push_back({{rightColumnX, startY + 3 * spacingY, sliderWidth, sliderHeight}, 0.0f, "Saturation"});
-    advancedSliders.push_back({{rightColumnX, startY + 4 * spacingY, sliderWidth, sliderHeight}, 0.0f, "Noise"});
+    advancedSliders = {
+        {{leftColumnX, startY + 0 * spacingY, sliderWidth, sliderHeight}, 0.0f,
+"PWM"},
+        {{leftColumnX, startY + 1 * spacingY, sliderWidth, sliderHeight}, 0.0f,
+"Metalizer"},
+        {{leftColumnX, startY + 2 * spacingY, sliderWidth, sliderHeight}, 0.0f,
+"Ultrasaw"},
+        {{leftColumnX, startY + 3 * spacingY, sliderWidth, sliderHeight}, 0.0f,
+"Saturation"},
+        {{leftColumnX, startY + 4 * spacingY, sliderWidth, sliderHeight}, 0.0f,
+"Noise"},
+    };
 }
 
 void DrawOscillatorUI(SDL_Renderer* renderer, bool advancedMode) {
@@ -116,11 +125,11 @@ void HandleOscillatorUIEvents(SDL_Event& event, bool& advancedMode) {
             oscSubLevel.store(easySliders[3].value);
             oscVolume.store(easySliders[4].value);
         } else {
-            oscPWMAmount.store(advancedSliders[5].value);
-            oscMetalizerAmount.store(advancedSliders[6].value);
-            oscUltrasawAmount.store(advancedSliders[7].value);
-            oscSaturationAmount.store(advancedSliders[8].value);
-            oscNoiseAmount.store(advancedSliders[9].value);
+            oscPWMAmount.store(advancedSliders[0].value);
+            oscMetalizerAmount.store(advancedSliders[1].value);
+            oscUltrasawAmount.store(advancedSliders[2].value);
+            oscSaturationAmount.store(advancedSliders[3].value);
+            oscNoiseAmount.store(advancedSliders[4].value);
         }
     }
 }

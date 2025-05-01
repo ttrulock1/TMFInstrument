@@ -187,6 +187,9 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
             padVoice.saturationAmount = oscSaturationAmount.load();
             padVoice.volume = oscVolume.load();
 
+    //         printf("PWM: %.2f Metal: %.2f Ultra: %.2f Noise: %.2f\n",
+    //    oscPWMAmount.load(), oscMetalizerAmount.load(),
+    //    oscUltrasawAmount.load(), oscNoiseAmount.load());
 
         padVoice.ampEnv.noteOn();
     }

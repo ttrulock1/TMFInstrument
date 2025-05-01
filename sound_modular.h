@@ -1,6 +1,8 @@
 // sound_modular.h
 #ifndef SOUND_MODULAR_H
 #define SOUND_MODULAR_H
+#include "shared_buffer.h"
+
 
 #include <cmath>
 #include <algorithm>
@@ -138,7 +140,10 @@ struct ModularVoice {
         double sub      = subLevel * ApplySubOsc(time, frequency, 1.0f);
 
         double mixed = (sine + square + saw + triangle + sub);
+
         mixed = ApplySaturation(mixed, saturationAmount);
+        double noise = ((rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.3 * oscNoiseAmount.load();
+        mixed += noise;
         mixed *= amp * volume;
 
         return static_cast<short>(std::clamp(mixed, -1.0, 1.0) * 32767);
