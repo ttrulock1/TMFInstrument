@@ -42,7 +42,8 @@ void SaveCurrentPreset(const std::string& filename) {
     preset.delayTime = delayTime.load();
     preset.delayFeedback = delayFeedback.load();
     preset.delayMix = delayMix.load();
-    preset.delayHighCut = delayHighCut.load();
+    preset.delayAnalogMode = delayAnalogMode.load();
+
 
     preset.reverbEnabled = reverbEnabled.load();
     preset.reverbDecay = reverbDecay.load();
@@ -105,7 +106,7 @@ bool LoadPreset(const std::string& filename) {
     delayTime.store(preset.delayTime);
     delayFeedback.store(preset.delayFeedback);
     delayMix.store(preset.delayMix);
-    delayHighCut.store(preset.delayHighCut);
+    delayAnalogMode.store(preset.delayAnalogMode);
 
     reverbEnabled.store(preset.reverbEnabled);
     reverbDecay.store(preset.reverbDecay);

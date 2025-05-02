@@ -29,6 +29,20 @@ float Delay::process(float input) {
         readIndex += buffer.size();
 
     float delayed = buffer[readIndex];
+
+    // COMMENT OUT IF DOESN"T WORK.
+    float feedbackSample = delayed * feedback;  // 🍀 add this declaration!
+
+    if (mode == DelayMode::Analog) {
+        // 🍀 Low-pass filter on feedback
+        lpFiltered += lpAlpha * (feedbackSample - lpFiltered);
+        feedbackSample = lpFiltered;
+
+        // 🍀 Soft clipping
+        feedbackSample = std::tanh(feedbackSample);
+
+    }
+
     buffer[writeIndex] = input + delayed * feedback;
 
     writeIndex = (writeIndex + 1) % buffer.size();

@@ -55,7 +55,7 @@ extern std::atomic<bool> chorusEnabled;
 extern std::atomic<float> delayTime;
 extern std::atomic<float> delayFeedback;
 extern std::atomic<float> delayMix;
-extern std::atomic<float> delayHighCut;
+extern std::atomic<bool> delayAnalogMode;  // 🚬 delay mode toggle
 extern std::atomic<bool> delayEnabled;
 
 // shared_buffer.h

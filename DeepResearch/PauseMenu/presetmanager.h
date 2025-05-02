@@ -17,7 +17,8 @@ struct Preset {
     bool  delayEnabled;
     float delayTime;
     float delayFeedback;
-    float delayMix;
+    float delayMix;    
+    bool delayAnalogMode;
     bool  reverbEnabled;
     float reverbLevel;
     // ... any other synth parameters (chorus, filters, etc.)

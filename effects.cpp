@@ -21,9 +21,8 @@ std::vector<EffectPanel> effectPanels = {
         {WINDOW_WIDTH / 3, 0, WINDOW_WIDTH / 3, WINDOW_HEIGHT}, "Delay",
         {
             {"Time", &delayTime, 0.0f, 1000.0f, {117, 191, 255}},
-            {"FB", &delayFeedback, 0.0f, 0.99f, {117, 191, 255}},
+            {"F.B.", &delayFeedback, 0.0f, 0.99f, {117, 191, 255}},
             {"Mix", &delayMix, 0.0f, 1.0f, {117, 191, 255}},
-            {"HPF", &delayHighCut, 100.0f, 20000.0f, {117, 191, 255}}
         },
         &delayEnabled,
         {70, 70, 150}
@@ -52,6 +51,8 @@ void DrawEffectsUI(SDL_Renderer* renderer, TTF_Font* font) {
         int sliderHeight = 120;
         int spacing = (panel.bounds.w - 40) / panel.parameters.size();
 
+        
+
         for (size_t i = 0; i < panel.parameters.size(); ++i) {
             auto& param = panel.parameters[i];
             float valNorm = (*param.param - param.min) / (param.max - param.min);
@@ -74,6 +75,27 @@ void DrawEffectsUI(SDL_Renderer* renderer, TTF_Font* font) {
             SDL_RenderCopy(renderer, tex, nullptr, &labelRect);
             SDL_FreeSurface(textSurf);
             SDL_DestroyTexture(tex);
+        }
+        
+                // 🚬 Analog/Digital mode toggle (only on Delay panel)
+                    if (panel.name == std::string("Delay")) {
+                        SDL_Rect modeToggle = {panel.bounds.x + panel.bounds.w / 2 - 25, panel.bounds.h - 90, 50, 30};
+
+                        // Set distinct color: bright orange when Analog (🏀), dark gray when Tape (📼)
+                        if (delayAnalogMode.load()) {
+                            SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255);  // orange 🏀
+                        } else {
+                            SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);   // dark gray 📼
+                        }
+                        SDL_RenderFillRect(renderer, &modeToggle);
+
+
+            SDL_Surface* modeText = TTF_RenderText_Blended(font, delayAnalogMode.load() ? "Analog 🚬" : "Digital", white);
+            SDL_Texture* modeTex = SDL_CreateTextureFromSurface(renderer, modeText);
+            SDL_Rect textRect = {modeToggle.x + 5, modeToggle.y + 5, modeText->w, modeText->h};
+            SDL_RenderCopy(renderer, modeTex, nullptr, &textRect);
+            SDL_FreeSurface(modeText);
+            SDL_DestroyTexture(modeTex);
         }
 
         SDL_Rect toggle = {panel.bounds.x + panel.bounds.w / 2 - 25, panel.bounds.h - 50, 50, 30};
@@ -101,6 +123,13 @@ void HandleEffectUIEvents(const SDL_Event& event) {
                     SDL_Rect sliderRect = {sliderAreaX + static_cast<int>(i) * spacing, sliderY, sliderWidth, sliderHeight};
                     if (SDL_PointInRect(&mouse, &sliderRect)) {
                         activeSlider = i;
+                    }
+                }
+
+                if (panel.name == std::string("Delay")) {
+                    SDL_Rect modeToggleRect = {panel.bounds.x + panel.bounds.w / 2 - 25, panel.bounds.h - 90, 50, 30};
+                    if (SDL_PointInRect(&mouse, &modeToggleRect)) {
+                        delayAnalogMode.store(!delayAnalogMode.load());
                     }
                 }
 

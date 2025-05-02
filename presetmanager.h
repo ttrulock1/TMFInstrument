@@ -42,7 +42,8 @@ struct SynthPreset {
     float delayTime;
     float delayFeedback;
     float delayMix;
-    float delayHighCut;
+    bool delayAnalogMode;   // ✅ <-- ADD THIS
+
 
     // Effects - Reverb
     bool reverbEnabled;

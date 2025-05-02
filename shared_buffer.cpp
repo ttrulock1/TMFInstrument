@@ -43,20 +43,20 @@ std::atomic<float> releaseTime = 0.1f;
 std::atomic<float> delayTime = 0.25f;         // 0.0 - 1.0
 std::atomic<float> delayFeedback = 0.4f;      // 0.0 - 1.0
 std::atomic<float> delayMix = 0.3f;           // 0.0 - 1.0
-std::atomic<float> delayHighCut = 1.0f;       // normalized 0.0 to 1.0 (placeholder)
-std::atomic<bool> delayEnabled = true;
+std::atomic<bool> delayAnalogMode = false;  // 🚬 delay mode toggle
+std::atomic<bool> delayEnabled = false;
 
 // 🌊 Chorus
 std::atomic<float> chorusRate = 0.5f;
 std::atomic<float> chorusDepth = 0.6f;
 std::atomic<float> chorusMix = 0.25f;
-std::atomic<bool> chorusEnabled = true;
+std::atomic<bool> chorusEnabled = false;
 
 // 🌫️ Reverb
 std::atomic<float> reverbDecay = 2.0f;
 std::atomic<float> reverbDamping = 0.5f;
 std::atomic<float> reverbMix = 0.3f;
-std::atomic<bool> reverbEnabled = true;
+std::atomic<bool> reverbEnabled = false;
 
 std::atomic<float> uiAttackTime = 0.01f;
 std::atomic<float> uiDecayTime = 0.1f;
