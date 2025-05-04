@@ -1,5 +1,6 @@
-// chorus.h
 #pragma once
+
+#include <cmath>
 
 class Chorus {
 public:
@@ -13,9 +14,15 @@ private:
     float sampleRate;
 
     float lfoPhase = 0.0f;
-    float lfoRate = 1.0f;    // Hz
-    float depth = 0.5f;      // 0.0 to 1.0
-    float mix = 0.5f;        // 0.0 to 1.0
+    float lfoPhase2 = 0.25f;  // second voice, phase offset (90°)
+    float lfoPhase3 = 0.5f;   // third voice, phase offset (180°)
+
+    float lfoRate = 1.0f;     // main LFO rate (Hz)
+    float lfoRate2 = 1.01f;   // slight detune for second voice
+    float lfoRate3 = 0.99f;   // slight detune for third voice
+
+    float depth = 0.5f;       // 0.0 to 1.0
+    float mix = 0.5f;         // 0.0 to 1.0
 
     static constexpr int delayBufferSize = 2048;
     float delayBuffer[delayBufferSize];
