@@ -47,10 +47,21 @@ private:
     double sampleRate;
     float decayAmount;
 
-    //added later.s
+    //added later.s    // 
     float lfoPhase = 0.0f;
+
+    float lfoPhase1 = lfoPhase;
+    float lfoPhase2 = lfoPhase + 0.25f;  // 90° offset
+    float lfoPhase3 = lfoPhase + 0.5f;   // 180° offset
+    float lfoPhase4 = lfoPhase + 0.75f;  // 270° offset
     float lfoRate = 0.1f;    // very slow, ~0.1 Hz
-    float lfoAmount = 1.5f;  // modulate ±1.5 samples
+    float lfoRate1 = 0.1f;
+    float lfoRate2 = 0.1f * 1.01f;
+    float lfoRate3 = 0.1f * 0.99f;
+    float lfoRate4 = 0.1f * 1.02f;
+
+
+    float lfoAmount = 10.0f;  // modulate ±1.5 samples
 };
 
 #endif // REVERB_H
