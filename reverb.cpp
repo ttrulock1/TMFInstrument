@@ -3,7 +3,10 @@
 #include <cmath>     // For sin(), tanh()
 
 Reverb::Reverb(double sampleRate)
-    : delays{ DelayLine(149, sampleRate),
+    : diffusion1(142, 0.7f),  // 👽 Added: diffusion blocks
+      diffusion2(107, 0.7f),
+      diffusion3(379, 0.7f),
+      delays { DelayLine(149, sampleRate),
              DelayLine(211, sampleRate),
              DelayLine(263, sampleRate),
              DelayLine(307, sampleRate) },
@@ -11,10 +14,13 @@ Reverb::Reverb(double sampleRate)
       damping(0.5f),
       mix(0.3f),
       sampleRate(sampleRate),
-      decayAmount(0.7f),
+      decayAmount(0.98f),
       lfoPhase(0.0f),
       lfoRate(0.1f),    // ~0.1 Hz, very slow modulation
       lfoAmount(1.5f) { // ±1.5 samples modulation
+
+      preDelaySamples = static_cast<int>((0.1f / 1000.0f) * sampleRate);  // 🎸 default 0.1 ms
+      preDelayBuffer = new float[static_cast<int>(sampleRate)]();
 }
 
 void Reverb::setDecay(float seconds) {
@@ -30,6 +36,11 @@ void Reverb::setMix(float m) {
     mix = std::clamp(m, 0.0f, 1.0f);
 }
 
+void Reverb::setPreDelay(float ms) {  // 🎸 added
+    int samples = static_cast<int>((ms / 1000.0f) * sampleRate);
+    preDelaySamples = std::clamp(samples, 0, static_cast<int>(sampleRate));
+}
+
 float Reverb::dampedSample(float input, float& last) {
     float a = damping;
     last += a * (input - last);
@@ -39,12 +50,16 @@ float Reverb::dampedSample(float input, float& last) {
 float Reverb::process(float input) {
     float wet = 0.0f;
 
+     // 👽 Pass input through diffusion chain
+    float diffused = diffusion3.process(diffusion2.process(diffusion1.process(input)));
+
     // Update LFO phase (for modulation)
     lfoPhase += lfoRate / sampleRate;
     if (lfoPhase >= 1.0f) lfoPhase -= 1.0f;
     float lfoMod = lfoAmount * std::sin(2.0f * M_PI * lfoPhase);
 
     for (int i = 0; i < 4; ++i) {
+            
          float lfoMod;
     switch (i) {
         case 0:
@@ -86,8 +101,8 @@ float Reverb::process(float input) {
         // Apply soft saturation to feedback path
         float saturatedFb = std::tanh(damped * decayAmount);
 
-        float inputGain = 0.3f;
-        float feedbackGain = 0.9f;
+        float inputGain = 0.2f;
+        float feedbackGain = 0.95f;
 
         delays[i].write((input * inputGain) + (saturatedFb * feedbackGain));
 

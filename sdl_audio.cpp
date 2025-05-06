@@ -242,6 +242,7 @@ if (reverbEnabled.load()) {
     reverb.setDecay(reverbDecay.load());
     reverb.setDamping(reverbDamping.load());
     reverb.setMix(reverbMix.load());
+    reverb.setPreDelay(reverbPreDelay.load());  // 🎸 new: set pre-delay from control
     drySample = reverb.process(drySample);
 }
 

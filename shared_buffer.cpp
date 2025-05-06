@@ -56,6 +56,8 @@ std::atomic<bool> chorusEnabled = false;
 std::atomic<float> reverbDecay = 2.0f;
 std::atomic<float> reverbDamping = 0.5f;
 std::atomic<float> reverbMix = 0.3f;
+std::atomic<float> reverbPreDelay = 20.0f;  // 🌸 default to 20 ms (adjustable 0–150 ms)
+
 std::atomic<bool> reverbEnabled = false;
 
 std::atomic<float> uiAttackTime = 0.01f;

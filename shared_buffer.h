@@ -64,6 +64,8 @@ extern std::atomic<float> reverbDecay;
 extern std::atomic<float> reverbDamping;
 extern std::atomic<float> reverbMix;
 extern std::atomic<bool> reverbEnabled;
+extern std::atomic<float> reverbPreDelay;  // 🌸 controls pre-delay time in ms
+
 
 // ADSR parameters controlled by UI
 extern std::atomic<float> uiAttackTime;

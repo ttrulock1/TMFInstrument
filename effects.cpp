@@ -32,7 +32,9 @@ std::vector<EffectPanel> effectPanels = {
         {
             {"Decay", &reverbDecay, 0.2f, 5.0f, {255, 210, 230}},
             {"Damp", &reverbDamping, 0.0f, 1.0f, {255, 210, 230}},
-            {"Mix", &reverbMix, 0.0f, 1.0f, {255, 210, 230}}
+            {"Mix", &reverbMix, 0.0f, 1.0f, {255, 210, 230}},
+            {"PreDelay", &reverbPreDelay, 0.0f, 150.0f, {255, 210, 230}}  // 🌸 new control!
+
         },
         &reverbEnabled,
         {40, 25, 45}
