@@ -3,9 +3,10 @@
 #include <cmath>     // For sin(), tanh()
 
 Reverb::Reverb(double sampleRate)
-    : diffusion1(142, 0.7f),  // 👽 Added: diffusion blocks
+    : //added different 
+      diffusion1(142, 0.69f),  // 👽 Added: diffusion blocks
       diffusion2(107, 0.7f),
-      diffusion3(379, 0.7f),
+      diffusion3(379, 0.73f),
       delays { DelayLine(149, sampleRate),
              DelayLine(211, sampleRate),
              DelayLine(263, sampleRate),
@@ -101,11 +102,16 @@ float Reverb::process(float input) {
         // Apply soft saturation to feedback path
         float saturatedFb = std::tanh(damped * decayAmount);
 
-        float inputGain = 0.2f;
-        float feedbackGain = 0.95f;
+        
+        //THESE CAN EASILY BECOME UI PARAMETERS IF WE WANT. RN I DON'T
+        float inputGain = 0.1f;
+        float feedbackGain = 0.97f;
 
-        delays[i].write((input * inputGain) + (saturatedFb * feedbackGain));
+        // Move input through diffusion first
+        float diffusedInput = diffusion3.process(diffusion2.process(diffusion1.process(input)));
 
+        // Then write diffused input into delay line (instead of direct input)
+        delays[i].write(diffusedInput * inputGain + saturatedFb * feedbackGain);
         wet += delayed;
     }
 
