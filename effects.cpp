@@ -6,9 +6,23 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 400
 
+const int panelWidth = WINDOW_WIDTH / 4;
+
 std::vector<EffectPanel> effectPanels = {
-    {   // Chorus - Left third (Boss CE-2 style)
-        {0, 0, WINDOW_WIDTH / 3, WINDOW_HEIGHT}, "Chorus",
+    {   // Filtered Feedback Drive
+        {0 * panelWidth, 0, panelWidth, WINDOW_HEIGHT}, "FilteredFeedback",
+        {
+            {"External Input Volume", &overdriveDrive, 0.0f, 1.0f, {0, 0, 0}},
+            {"Cutoff", &steinerCutoff, 20.0f, 20000.0f, {31, 119, 180}},
+            {"Resonance", &steinerResonance, 0.0f, 1.0f, {31, 119, 180}},
+            {"VCA", &steinerVcaLevel, 0.0f, 1.0f, {31, 119, 180}},
+            {"BruteFactor (Feedback)", &feedbackAmount, 0.0f, 1.0f, {117, 191, 255}}
+        },
+            &filteredFeedbackEnabled,
+        {229, 191, 0}  // panel background color
+    },
+    {   // Chorus
+        {1 * panelWidth, 0, panelWidth, WINDOW_HEIGHT}, "Chorus",
         {
             {"Rate", &chorusRate, 0.1f, 5.0f, {31, 119, 180}},
             {"Depth", &chorusDepth, 0.0f, 1.0f, {31, 119, 180}},
@@ -17,24 +31,23 @@ std::vector<EffectPanel> effectPanels = {
         &chorusEnabled,
         {17, 45, 39}
     },
-    {   // Delay - Middle third (Existing DD-7 style)
-        {WINDOW_WIDTH / 3, 0, WINDOW_WIDTH / 3, WINDOW_HEIGHT}, "Delay",
+    {   // Delay
+        {2 * panelWidth, 0, panelWidth, WINDOW_HEIGHT}, "Delay",
         {
             {"Time", &delayTime, 0.0f, 1000.0f, {117, 191, 255}},
             {"F.B.", &delayFeedback, 0.0f, 0.99f, {117, 191, 255}},
-            {"Mix", &delayMix, 0.0f, 1.0f, {117, 191, 255}},
+            {"Mix", &delayMix, 0.0f, 1.0f, {117, 191, 255}}
         },
         &delayEnabled,
         {70, 70, 150}
     },
-    {   // Reverb - Right third (Boss RV-6 style)
-        {2 * WINDOW_WIDTH / 3, 0, WINDOW_WIDTH / 3, WINDOW_HEIGHT}, "Reverb",
+    {   // Reverb
+        {3 * panelWidth, 0, panelWidth, WINDOW_HEIGHT}, "Reverb",
         {
             {"Decay", &reverbDecay, 0.2f, 5.0f, {255, 210, 230}},
             {"Damp", &reverbDamping, 0.0f, 1.0f, {255, 210, 230}},
             {"Mix", &reverbMix, 0.0f, 1.0f, {255, 210, 230}},
-            {"PreDelay", &reverbPreDelay, 0.0f, 150.0f, {255, 210, 230}}  // 🌸 new control!
-
+            {"PreDelay", &reverbPreDelay, 0.0f, 150.0f, {255, 210, 230}}
         },
         &reverbEnabled,
         {40, 25, 45}
@@ -60,7 +73,15 @@ void DrawEffectsUI(SDL_Renderer* renderer, TTF_Font* font) {
             float valNorm = (*param.param - param.min) / (param.max - param.min);
             valNorm = std::clamp(valNorm, 0.0f, 1.0f);
 
-            SDL_Rect track = {sliderAreaX + static_cast<int>(i) * spacing, sliderY, sliderWidth, sliderHeight};
+            int sliderX;
+            if (panel.parameters.size() == 1) {
+                // center slider horizontally inside panel
+                sliderX = panel.bounds.x + (panel.bounds.w / 2) - (sliderWidth / 2);
+            } else {
+                sliderX = sliderAreaX + static_cast<int>(i) * spacing;
+            }
+
+            SDL_Rect track = {sliderX, sliderY, sliderWidth, sliderHeight};
             SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
             SDL_RenderFillRect(renderer, &track);
 
@@ -122,7 +143,14 @@ void HandleEffectUIEvents(const SDL_Event& event) {
                 int sliderY = 80, sliderHeight = 120, sliderWidth = 20;
 
                 for (size_t i = 0; i < panel.parameters.size(); ++i) {
-                    SDL_Rect sliderRect = {sliderAreaX + static_cast<int>(i) * spacing, sliderY, sliderWidth, sliderHeight};
+                    int sliderX;
+                    if (panel.parameters.size() == 1) {
+                        sliderX = panel.bounds.x + (panel.bounds.w / 2) - (sliderWidth / 2);
+                    } else {
+                        sliderX = sliderAreaX + static_cast<int>(i) * spacing;
+                    }
+
+                    SDL_Rect sliderRect = {sliderX, sliderY, sliderWidth, sliderHeight};
                     if (SDL_PointInRect(&mouse, &sliderRect)) {
                         activeSlider = i;
                     }

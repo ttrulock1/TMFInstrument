@@ -7,10 +7,6 @@ Reverb::Reverb(double sampleRate)
       diffusion1(142, 0.69f),  // 👽 Added: diffusion blocks
       diffusion2(107, 0.7f),
       diffusion3(379, 0.73f),
-      //comment out ******************** (note for testing)
-      diffusion4(211, 0.72f),
-      diffusion5(173, 0.68f),
-      diffusion6(251, 0.74f),
       delays { DelayLine(149, sampleRate),
              DelayLine(211, sampleRate),
              DelayLine(263, sampleRate),
@@ -54,17 +50,6 @@ float Reverb::dampedSample(float input, float& last) {
 
 float Reverb::process(float input) {
     float wet = 0.0f;
-
-     // 👽 Pass input through diffusion chain
-     // return to test this later.
-        // float diffused = diffusion6.process(
-        //                     diffusion5.process(
-        //                         diffusion4.process(
-        //                            diffusion3.process(
-        //                               diffusion2.process(
-        //                                  diffusion1.process(input)))))
-        // );
-
 
      // 👽 Pass input through diffusion chain
     float diffused = diffusion3.process(diffusion2.process(diffusion1.process(input)));

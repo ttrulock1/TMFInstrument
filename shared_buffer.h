@@ -74,7 +74,12 @@ extern std::atomic<float> uiSustainLevel;
 extern std::atomic<float> uiReleaseTime;
 extern std::atomic<float> uiEnvAmount;
 
-
+extern std::atomic<float> overdriveDrive;
+extern std::atomic<float> steinerCutoff;
+extern std::atomic<float> steinerResonance;
+extern std::atomic<float> steinerVcaLevel;
+extern std::atomic<float> feedbackAmount;
+extern std::atomic<bool> filteredFeedbackEnabled;
 
 extern ADSR env; // 🌹 new global envelope for UI or preset logic
 

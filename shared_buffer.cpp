@@ -66,6 +66,14 @@ std::atomic<float> uiSustainLevel = 0.8f;
 std::atomic<float> uiReleaseTime = 0.1f;
 std::atomic<float> uiEnvAmount = 1.0f;
 
+//overdrive
+std::atomic<float> overdriveDrive = 0.5f;
+std::atomic<float> steinerCutoff = 1000.0f;
+std::atomic<float> steinerResonance = 0.0f;
+std::atomic<float> steinerVcaLevel = 1.0f;
+std::atomic<float> feedbackAmount = 0.0f;
+std::atomic<bool> filteredFeedbackEnabled = false;
+
 
 LFO lfo;  // Add this global instance
 

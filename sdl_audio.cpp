@@ -4,21 +4,24 @@
 #include "sound_modular.h"
 using sound_modular::ModularVoice;
 #include "shared_buffer.h"
+#include "Filtered_Feedback_Drive.h"
 #include "delay.h"  // 🎯 Include our delay effect
 #include "reverb.h"
-#include "chorus.h"  // uncomment when created
+#include "chorus.h"  
+#include "Filtered_Feedback_Drive.h"
+
 #include "lfo_engine.h"
 #include "lfo_ui.h"
 #include "arp.h"
 //maybe delete this below line you figure it out.
 #include "arp_ui.h"  // ✅ make sure this is at the top
 
-
-
 #include <atomic>
 #include <cmath>  // for std::pow
 #include <algorithm> // for std::clamp
 #include "adsr_engine.h" // 💙 New ADSR engine integration
+
+static FilteredFeedbackDrive filteredFeedbackDrive(SAMPLE_RATE);
 
 
 // 🎯 Bring in externally declared ADSR control parameters
@@ -216,35 +219,47 @@ if (padVoice.active) {
         int padSample = padVoice.active ? padVoice.getSample() : 0;
         int sample = seqSample + padSample;
         float drySample = sample / 32768.0f;
+
         ApplyLFOAmplitude(drySample);
         ApplyLFOFilter(drySample);
 
+    filteredFeedbackDrive.setDrive(overdriveDrive.load());
+    filteredFeedbackDrive.setCutoff(steinerCutoff.load());
+    filteredFeedbackDrive.setResonance(steinerResonance.load());
+    filteredFeedbackDrive.setVcaLevel(steinerVcaLevel.load());
+    filteredFeedbackDrive.setFeedbackAmount(feedbackAmount.load());
+
+    if (filteredFeedbackEnabled.load()) {
+        drySample = filteredFeedbackDrive.processSample(drySample);
+    }
+
+
 
 // 🎛️ Apply Chorus (if implemented)
-if (chorusEnabled.load()) {
-    chorus.setRate(chorusRate.load());
-    chorus.setDepth(chorusDepth.load());
-    chorus.setMix(chorusMix.load());
-    drySample = chorus.process(drySample);
-}
+        if (chorusEnabled.load()) {
+            chorus.setRate(chorusRate.load());
+            chorus.setDepth(chorusDepth.load());
+            chorus.setMix(chorusMix.load());
+            drySample = chorus.process(drySample);
+        }
 
-// Apply Delay
-if (delayEnabled.load()) {
-    delayEffect.setDelayTime(static_cast<int>(delayTime.load()));
-    delayEffect.setFeedback(delayFeedback.load());
-    delayEffect.setMix(delayMix.load());
-    // delayEffect.setHighCut(delayHighCut.load()); // if supported
-    drySample = delayEffect.process(drySample);
-}
+    // Apply Delay
+    if (delayEnabled.load()) {
+        delayEffect.setDelayTime(static_cast<int>(delayTime.load()));
+        delayEffect.setFeedback(delayFeedback.load());
+        delayEffect.setMix(delayMix.load());
+        // delayEffect.setHighCut(delayHighCut.load()); // if supported
+        drySample = delayEffect.process(drySample);
+    }
 
-// 🌫️ Apply Reverb
-if (reverbEnabled.load()) {
-    reverb.setDecay(reverbDecay.load());
-    reverb.setDamping(reverbDamping.load());
-    reverb.setMix(reverbMix.load());
-    reverb.setPreDelay(reverbPreDelay.load());  // 🎸 new: set pre-delay from control
-    drySample = reverb.process(drySample);
-}
+    // 🌫️ Apply Reverb
+    if (reverbEnabled.load()) {
+        reverb.setDecay(reverbDecay.load());
+        reverb.setDamping(reverbDamping.load());
+        reverb.setMix(reverbMix.load());
+        reverb.setPreDelay(reverbPreDelay.load());  // 🎸 new: set pre-delay from control
+        drySample = reverb.process(drySample);
+    }
 
 // ✅ Final sample conversion
 int finalSample = static_cast<int>(drySample * 32768.0f);

@@ -97,10 +97,7 @@ private:
     Allpass diffusion1 = Allpass(142, 0.7f);
     Allpass diffusion2 = Allpass(107, 0.7f);
     Allpass diffusion3 = Allpass(379, 0.7f);
-    //comment out ******************** (note for testing)
-    Allpass diffusion4 = Allpass(211, 0.72f);
-    Allpass diffusion5 = Allpass(173, 0.68f);
-    Allpass diffusion6 = Allpass(251, 0.74f);
+    
 };
 
 
