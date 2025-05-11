@@ -3,9 +3,11 @@
 class MoogFilter {
 public:
     MoogFilter(float sampleRate);
-    void reset();
     void setCutoff(float cutoffHz);
     void setResonance(float res);
+    void reset();
+    float getCutoff() const { return cutoff; }
+    float getResonance() const { return resonance; }
     float process(float input);
     float process(float input, float& highpassOut);
 

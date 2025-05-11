@@ -10,7 +10,7 @@ public:
 
     void pushSample(float sample);
     void updateSpectrum();
-    void draw(SDL_Renderer* renderer, int x, int y, int width, int height);
+    void draw(SDL_Renderer* renderer, int x, int y, int width, int height, float cutoffHz, float resonance);
 
 private:
     int fftSize;

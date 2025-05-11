@@ -3,6 +3,7 @@
 
 #include "ring_buffer.h"
 #include "adsr_engine.h" // 🌹 added for shared ADSR env
+#include "Moog_Filter.h"
 
 #include <cstdint>
 #include <atomic>
@@ -44,6 +45,9 @@ extern std::atomic<float> oscMetalizerAmount;
 extern std::atomic<float> oscUltrasawAmount;
 extern std::atomic<float> oscSaturationAmount;
 extern std::atomic<float> oscNoiseAmount;
+
+extern MoogFilter moogFilter;
+
 
 // 🌊 Chorus parameters
 extern std::atomic<float> chorusRate;

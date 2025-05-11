@@ -37,7 +37,10 @@ std::atomic<float> sustainLevel = 0.8f;
 std::atomic<float> releaseTime = 0.1f;
 
 
-//✅ These become the actual backing variables that your effects UI and sdl_audio.cpp will modify.
+MoogFilter moogFilter(44100.0f);
+
+
+// the actual backing variables that your effects UI and sdl_audio.cpp will modify.
 
 // 👽 Delay effect parameter definitions
 std::atomic<float> delayTime = 0.25f;         // 0.0 - 1.0

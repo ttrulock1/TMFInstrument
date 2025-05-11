@@ -8,6 +8,7 @@ using sound_modular::ModularVoice;
 #include "delay.h"  // 🎯 Include our delay effect
 #include "reverb.h"
 #include "chorus.h"  
+#include "Moog_Filter.h"
 #include "Filtered_Feedback_Drive.h"
 
 #include "lfo_engine.h"
@@ -221,7 +222,9 @@ if (padVoice.active) {
         float drySample = sample / 32768.0f;
 
         ApplyLFOAmplitude(drySample);
-        ApplyLFOFilter(drySample);
+        ApplyLFOFilter(drySample);        
+        drySample = moogFilter.process(drySample);  
+
 
     filteredFeedbackDrive.setDrive(overdriveDrive.load());
     filteredFeedbackDrive.setCutoff(steinerCutoff.load());
