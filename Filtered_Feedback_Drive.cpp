@@ -1,13 +1,10 @@
-// Filtered_Feedback_Drive.cpp
 #include "Filtered_Feedback_Drive.h"
+#include "steiner_filter.h"
 #include <cmath>
 #include <algorithm>
 
 FilteredFeedbackDrive::FilteredFeedbackDrive(double sampleRate)
-    : sampleRate(sampleRate),
-      driveAmount(0.0f),
-      feedbackAmount(0.0f),
-      steinerFilter(sampleRate) {}  // initialize steiner filter
+    : steinerFilter(sampleRate) {}
 
 void FilteredFeedbackDrive::setDrive(float drive) {
     driveAmount = std::clamp(drive, 0.0f, 1.0f);
@@ -18,23 +15,27 @@ void FilteredFeedbackDrive::setFeedbackAmount(float feedback) {
 }
 
 void FilteredFeedbackDrive::setCutoff(float cutoffHz) {
-    steinerFilter.setCutoff(cutoffHz);
+    steinerFilter.setCutoff(cutoffHz);  // ✅ Steiner only uses cutoff directly
 }
 
-void FilteredFeedbackDrive::setResonance(float resonance) {
-    steinerFilter.setResonance(resonance);
+void FilteredFeedbackDrive::setResonance(float r) {
+    resonance = std::clamp(r, 0.0f, 1.0f);  // ✅ Stored in this class
 }
 
 void FilteredFeedbackDrive::setVcaLevel(float level) {
-    steinerFilter.setVcaLevel(level);
+    vca = std::clamp(level, 0.0f, 2.0f);    // ✅ Stored in this class
 }
 
 float FilteredFeedbackDrive::processSample(float input) {
-    float gain = 1.0f + 20.0f * driveAmount;
-    float saturated = std::tanh(input * gain);
+    // they had me change this and it made it softer.
+    float feedbackInput = input * feedbackAmount;
+    // float feedbackInput = input;  // don't attenuate input here
+    float gain = 1.0f + 25.0f * driveAmount;
+    float saturated = std::tanh(feedbackInput * gain);
 
-    float filtered = steinerFilter.process(saturated);
-    return filtered;
+    // 🔁 This feeds the *adjusted* signal into the Steiner filter with feedback-controlled input
+    return steinerFilter.process(saturated, resonance, vca);
+    
 }
 
 float FilteredFeedbackDrive::getFeedbackAmount() const {

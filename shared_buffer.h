@@ -2,7 +2,7 @@
 #define SHARED_BUFFER_H
 
 #include "ring_buffer.h"
-#include "adsr_engine.h" // 🌹 added for shared ADSR env
+#include "adsr_engine.h" 
 #include "Moog_Filter.h"
 
 #include <cstdint>
@@ -33,7 +33,7 @@ struct NoteEvent {
 
 extern RingBuffer<NoteEvent> padNoteEvents; // clearly for pad notes only
 
-// 🌟 Oscillator Parameters (for Synth Presets)
+// Oscillator Parameters (for Synth Presets)
 extern std::atomic<float> oscSawLevel;
 extern std::atomic<float> oscSquareLevel;
 extern std::atomic<float> oscSineLevel;

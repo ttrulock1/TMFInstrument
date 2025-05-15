@@ -1,43 +1,37 @@
-// steiner_filter.cpp
-
 #include "steiner_filter.h"
 #include <cmath>
-#include <algorithm>
+#include <algorithm> // for std::clamp (safely limits values)
 
 SteinerFilter::SteinerFilter(double sampleRate)
-    : sampleRate(sampleRate), cutoff(1000.0f), resonance(0.0f), vcaLevel(1.0f),
-      buf0(0.0f), buf1(0.0f), buf2(0.0f), buf3(0.0f), feedbackAmount(0.0f) {}
+    : sampleRate(sampleRate) {} // sets sample rate when creating filter
 
-void SteinerFilter::setCutoff(float cutoffHz) {
-    cutoff = std::clamp(cutoffHz, 20.0f, static_cast<float>(sampleRate / 2.0));
+
+void SteinerFilter::setCutoff(float hz) {
+    cutoffHz = hz;
 }
 
-void SteinerFilter::setResonance(float res) {
-    resonance = std::clamp(res, 0.0f, 1.0f);
-}
+float SteinerFilter::process(float input, float resonance, float vca) {
+    // Limit cutoff range to safe values
+    float maxCutoff = static_cast<float>(sampleRate * 0.5);
+    float cutoff = std::clamp(cutoffHz, 20.0f, maxCutoff);
 
-void SteinerFilter::setVcaLevel(float level) {
-    vcaLevel = std::clamp(level, 0.0f, 1.0f);
-}
+    float f = std::clamp(static_cast<float>((2.0f * cutoff) / sampleRate), 0.0f, 1.0f);
 
-float SteinerFilter::process(float input) {
-    // simplified Steiner-Parker low-pass approximation
-    float f = 2.0f * std::sin(M_PI * cutoff / sampleRate);
-    feedbackAmount = resonance * 4.0f * (1.0f - 0.15f * f * f);
+    // Calculate feedback amount from resonance (adds peak emphasis)
 
-    input -= buf3 * feedbackAmount;
-    input *= 0.35013f * (f * f) * (f * f);
+    float fb = std::clamp(resonance * 4.0f * (1.0f - 0.15f * f * f), 0.0f, 4.0f);
+    input -= buf3 * fb;
 
-    buf0 = input + 0.3f * buf0 + 1e-5f;
-    buf1 = buf0 + 0.3f * buf1 + 1e-5f;
-    buf2 = buf1 + 0.3f * buf2 + 1e-5f;
-    buf3 = buf2 + 0.3f * buf3 + 1e-5f;
+    buf0 += f * (input - buf0);
+    buf1 += f * (buf0 - buf1);
+    buf2 += f * (buf1 - buf2);
+    buf3 += f * (buf2 - buf3);
 
-    // output after 4-pole filtering
-    float output = buf3;
+        // Apply VCA (volume control after filtering)
+        //SHOULD THIS BE AFTER OR BEFORE FILTER? Also shoul this be here of the FFD.cpp?r
+    float output = buf3 * vca;
+    output *= 1.5f;
+    // return std::clamp(output, -1.0f, 1.0f);
+    return output; // allow hot feedback
 
-    // apply VCA (amplitude control)
-    output *= vcaLevel;
-
-    return output;
 }

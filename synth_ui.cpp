@@ -59,6 +59,8 @@ void HandleSynthEditorEvents(SDL_Event &event)
 {
     static bool draggingCutoff = false;
     static bool draggingResonance = false;
+    static bool draggingCutoffFromSpectrum = false;
+    static bool draggingResonanceFromSpectrum = false;
 
     int mx = event.button.x;
     int my = event.button.y;
@@ -103,4 +105,47 @@ void HandleSynthEditorEvents(SDL_Event &event)
     {
         HandleLFOEvents(event, lfoBounds.x, lfoBounds.y, lfoBounds.w, lfoBounds.h);
     }
+    // 🌟 Spectrum Drag for Cutoff/Resonance (with grab handle)
+
+// 👇 Convert moogFilter cutoff (in Hz) to X-position in the spectrum
+int cutoffX = spectrumBounds.x + static_cast<int>((moogFilter.getCutoff() / 8000.0f) * spectrumBounds.w);
+
+// 👇 Define a draggable zone around that X-line (±6 pixels wide)
+SDL_Rect dragZone = {
+    cutoffX - 6,
+    spectrumBounds.y,
+    12,                      // width
+    spectrumBounds.h         // full height
+};
+
+// 👇 START DRAGGING
+if (event.type == SDL_MOUSEBUTTONDOWN) {
+    if (SDL_PointInRect(&pt, &dragZone)) {
+        draggingCutoffFromSpectrum = true;     // ✅ Start dragging cutoff if click inside zone
+    }
+    else if ((SDL_GetModState() & KMOD_SHIFT) && SDL_PointInRect(&pt, &spectrumBounds)) {
+        draggingResonanceFromSpectrum = true;  // ✅ Start dragging resonance if Shift+click inside full spectrum
+    }
+}
+
+// 👇 STOP DRAGGING
+if (event.type == SDL_MOUSEBUTTONUP) {
+    draggingCutoffFromSpectrum = false;
+    draggingResonanceFromSpectrum = false;
+}
+
+// 👇 HANDLE DRAG MOTION
+if (event.type == SDL_MOUSEMOTION) {
+    if (draggingCutoffFromSpectrum) {
+        float normX = float(mx - spectrumBounds.x) / spectrumBounds.w;
+        normX = std::clamp(normX, 0.0f, 1.0f);
+        moogFilter.setCutoff(normX * 8000.0f);  // 👈 Map drag X back to Hz and update filter
+    }
+    if (draggingResonanceFromSpectrum) {
+        float normY = 1.0f - float(my - spectrumBounds.y) / spectrumBounds.h;
+        normY = std::clamp(normY, 0.0f, 1.0f);
+        moogFilter.setResonance(normY * 4.0f);  // 👈 Map drag Y to resonance strength
+    }
+}
+
 }

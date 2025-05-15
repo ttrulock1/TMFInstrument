@@ -19,11 +19,13 @@ public:
     float getFeedbackAmount() const;
 
 private:
-    double sampleRate;
-    float driveAmount;
-    float feedbackAmount;
+    double sampleRate = 44100.0;
+    float driveAmount = 0.0f;
+    float feedbackAmount = 0.0f;
+    float resonance = 0.0f;      // ✅ add this
+    float vca = 1.0f;            // ✅ and this
 
-    SteinerFilter steinerFilter;  // instance of external filter
+    SteinerFilter steinerFilter;
 };
 
 #endif // FILTERED_FEEDBACK_DRIVE_H
